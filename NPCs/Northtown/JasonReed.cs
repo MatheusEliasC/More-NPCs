@@ -22,9 +22,6 @@ namespace MoreNPCs.NPCs
             var northIndustrial = Building.Get<NorthIndustrialBuilding>();
             // Standing spot at the Taco Ticklers register, beside Kyle Cooley's counter position.
             Vector3 register = new Vector3(-28.9266f, 1.065f, 74.6178f);
-            // Approach point just behind the register (lower Z). Walking approach -> register makes Jason
-            // face +Z toward the counter/Kyle instead of standing with his back turned.
-            Vector3 registerApproach = new Vector3(-28.9266f, 1.065f, 73.1178f);
             Vector3 outside = new Vector3(-36.3346f, 1.065f, 75.6414f);
             Vector3 spawnPos = new Vector3(-28.9266f, 1.065f, 74.6178f);
             builder.WithIdentity("jason_reed", "Jason", "Reed")
@@ -86,11 +83,12 @@ namespace MoreNPCs.NPCs
                     // Jason works the Taco Ticklers register standing next to Kyle Cooley (like the
                     // official mod), not sitting in a booth. LocationDialogue keeps him standing at the
                     // counter spot and interactable through the work shift.
-                    plan.Add(new WalkToSpec { Destination = registerApproach, StartTime = 0543, FaceDestinationDirection = true });
-                    plan.LocationDialogue(register, 0645, faceDestinationDir: true);
+                    // Stand at the register facing the counter/Kyle. WalkToSpec.Forward sets the final
+                    // heading and persists (LocationDialogue reset it to face away, leaving him back-turned).
+                    // Forward points -Z toward the counter (opposite the wall he was facing).
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.Add(new WalkToSpec { Destination = outside, StartTime = 1750, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 240, 0) * Vector3.forward});
-                    plan.Add(new WalkToSpec { Destination = registerApproach, StartTime = 1949, FaceDestinationDirection = true });
-                    plan.LocationDialogue(register, 1955, faceDestinationDir: true);
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.Add(new UseVendingMachineSpec { StartTime = 2129 });
                     plan.StayInBuilding(northIndustrial, 2212, 449);
                 });

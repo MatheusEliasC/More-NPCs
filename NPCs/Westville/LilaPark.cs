@@ -21,6 +21,7 @@ namespace MoreNPCs.NPCs
         {
             var cornerStore = Building.Get<CornerStore>();
             var sauerkrautSupreme = Building.Get<SauerkrautSupreme>();
+            var thePissHut = Building.Get<ThePissHut>();
             Vector3 spawnPos = new Vector3(-96.6140f, -2.8350f, 58.3390f);
             Vector3 busStop = new Vector3(-13.0495f, 1.065f, 95.5169f);
 
@@ -85,10 +86,11 @@ namespace MoreNPCs.NPCs
                     plan.StayInBuilding(sauerkrautSupreme, 1224, 124);
                     plan.UseATM(1454);
                     plan.UseVendingMachine(1644);
-                    // Leave an open window around the deal time (WithOrderTime 1820) so the automatic
-                    // customer deal-attendance can walk her to the meet point instead of competing with a
-                    // StayInBuilding. Home block starts well after the deal window closes.
-                    plan.Add(new StayInBuildingSpec { BuildingName = "Room 2", StartTime = 2030, DurationMinutes = 623 });
+                    // Overnight home. The old schedule targeted "Room 2", a building that BuildingSetup
+                    // never fabricates (only Rooms 4/5/6 exist), so she tried to enter a non-existent
+                    // building and froze. Use a real, typed Westville building instead. Start after the
+                    // deal window (WithOrderTime 1820) so she is free to attend the arranged deal.
+                    plan.StayInBuilding(thePissHut, 2030, 623);
                 });
         }
 
