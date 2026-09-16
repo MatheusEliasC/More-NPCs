@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -16,6 +17,7 @@ namespace MoreNPCs.NPCs
     public sealed class VeraKnox : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/Beanie/Beanie", new Color(0.2f, 0.22f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 650f, maxWeekly: 940f)
@@ -80,7 +81,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(fishWarehouse, 0718, 88);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Suburbia/Residential park/OutdoorBench (2)", StartTime = 0906, DurationMinutes = 124 });
                     plan.StayInBuilding(docksIndustrial, 1110, 118);

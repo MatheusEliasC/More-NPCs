@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class SharonWebster : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -49,7 +51,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/CollarJacket/CollarJacket", new Color(0.26f, 0.30f, 0.34f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(350f, 650f)
@@ -77,7 +78,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(websterHouse, 0706, 164);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Westville/Slums Park/OutdoorBench", StartTime = 1021, DurationMinutes = 89 });
                     plan.StayInBuilding(westGasMart, 1151, 124);

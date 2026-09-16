@@ -9,12 +9,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class VictorHughes : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Hands/Polex/Polex", new Color(0.717f, 0.717f, 0.717f));
                 })
                 .WithSpawnPosition(westGasmart)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 500f, maxWeekly: 700f)
@@ -80,7 +81,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(cornerStore, 0917, 149);
                     plan.Add(new WalkToSpec { Destination = northWaterfront, StartTime = 1107, FaceDestinationDirection = true });
                     plan.StayInBuilding(thePissHut, 1358, 124);

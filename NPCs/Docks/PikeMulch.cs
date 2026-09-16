@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -18,6 +19,7 @@ namespace MoreNPCs.NPCs
     public sealed class PikeMulch : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/CombatBoots/CombatBoots", new Color(0.2f, 0.18f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 580f, maxWeekly: 850f)
@@ -82,7 +83,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(fishWarehouse, 0635, 108);
                     plan.Add(new WalkToSpec { Destination = sewerStorageEntrance, StartTime = 0843, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 210, 0) * Vector3.forward });
                     plan.StayInBuilding(hylandBank, 1018, 76);

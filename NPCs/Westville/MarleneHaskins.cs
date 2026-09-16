@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class MarleneHaskins : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -49,7 +51,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Flats/Flats", new Color(0.22f, 0.22f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(450f, 650f)
@@ -77,7 +78,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(westGasMart, 0813, 94);
                     plan.Add(new WalkToSpec { Destination = oldCourt, StartTime = 1008, FaceDestinationDirection = true });
                     plan.StayInBuilding(arcade, 1143, 114);

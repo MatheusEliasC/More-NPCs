@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -6,12 +6,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class MiltonDelaney : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -48,7 +50,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.151f, 0.151f, 0.151f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 600f, maxWeekly: 1000f)
@@ -76,7 +77,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Hyland Medical", StartTime = 1133, DurationMinutes = 89 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "HAM Legal", StartTime = 1303, DurationMinutes = 126 });
                     plan.Add(new WalkToSpec { Destination = hospital3, StartTime = 1510, FaceDestinationDirection = true });

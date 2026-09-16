@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -16,6 +17,7 @@ namespace MoreNPCs.NPCs
     public sealed class OliveCrank : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -57,7 +59,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/ChefHat/ChefHat", new Color(0.9f, 0.88f, 0.86f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 640f, maxWeekly: 920f)
@@ -85,7 +86,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(fishWarehouse, 0702, 96);
                     plan.StayInBuilding(docksIndustrial, 0836, 118);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Suburbia/Residential park/OutdoorBench", StartTime = 1014, DurationMinutes = 154 });

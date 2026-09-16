@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -17,6 +18,7 @@ namespace MoreNPCs.NPCs
     public sealed class KaraDempsey : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -55,7 +57,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/SmallRoundGlasses/SmallRoundGlasses", new Color(0.16f, 0.16f, 0.18f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(400f, 600f)
@@ -83,7 +84,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(arcade, 0705, 149);
                     plan.Add(new WalkToSpec { Destination = courtyard, StartTime = 1050, FaceDestinationDirection = true });
                     plan.StayInBuilding(cornerStore, 1220, 89);

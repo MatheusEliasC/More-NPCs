@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.NPCs.Northtown;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -19,6 +20,7 @@ namespace MoreNPCs.NPCs
     public sealed class PiperSloan : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -56,7 +58,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/BucketHat/BucketHat", new Color(0.28f, 0.36f, 0.22f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 300f, maxWeekly: 700f)
@@ -84,7 +85,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(shack, 0015, 479);
                     plan.Add(new WalkToSpec { Destination = northLookout, StartTime = 0830, FaceDestinationDirection = true });
                     plan.StayInBuilding(budsBar, 0945, 104);

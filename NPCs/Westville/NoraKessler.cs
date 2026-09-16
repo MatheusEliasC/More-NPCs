@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -9,12 +9,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class NoraKessler : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(1.000f, 0.756f, 0.212f));
                 })
                 .WithSpawnPosition(busStop)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 500f, maxWeekly: 700f)
@@ -80,7 +81,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(sauerkrautSupreme, 0851, 104);
                     plan.StayInBuilding(arcade, 1046, 114);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Westville/OutdoorBench", StartTime = 1211, DurationMinutes = 99 });

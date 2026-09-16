@@ -9,12 +9,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class JamalBennett : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -53,7 +55,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(0.717f, 0.717f, 0.717f));
                 })
                 .WithSpawnPosition(belowOverpass)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 500f, maxWeekly: 700f)
@@ -81,7 +82,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(janesVan, 0910, 126);
                     plan.Add(new WalkToSpec { Destination = belowOverpass, StartTime = 1037, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 20, 0) * Vector3.forward});
                     plan.StayInBuilding(thePissHut, 1409, 96);

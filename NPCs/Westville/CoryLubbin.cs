@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -17,6 +18,7 @@ namespace MoreNPCs.NPCs
     public sealed class CoryLubbin : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/Oakleys/Oakleys", new Color(0.12f, 0.12f, 0.13f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(50f, 250f)
@@ -79,7 +80,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = playZone, StartTime = 0805, FaceDestinationDirection = true });
                     plan.StayInBuilding(cornerStore, 0910, 94);
                     plan.Add(new WalkToSpec { Destination = dadsWork, StartTime = 1045, FaceDestinationDirection = true });

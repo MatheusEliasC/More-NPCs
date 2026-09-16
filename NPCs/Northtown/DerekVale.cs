@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.NPCs.Northtown;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -18,6 +19,7 @@ namespace MoreNPCs.NPCs
     public sealed class DerekVale : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -53,7 +55,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/BucketHat/BucketHat", new Color(0.22f, 0.35f, 0.18f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 300f, maxWeekly: 700f)
@@ -81,7 +82,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(shack, 2355, 479);
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (1)", StartTime = 0755, DurationMinutes = 109 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "The Piss Hut", StartTime = 1005, DurationMinutes = 119 });

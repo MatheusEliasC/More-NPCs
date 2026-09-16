@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -17,6 +18,7 @@ namespace MoreNPCs.NPCs
     public sealed class SiennaCrowley : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -51,7 +53,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(0.76f, 0.67f, 0.34f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(500f, 700f)
@@ -70,7 +71,6 @@ namespace MoreNPCs.NPCs
                 .WithRelationshipDefaults(r => r.WithDelta(2.0f).SetUnlocked(false).WithConnectionsById("lucy_pennington", "jennifer_rivera").SetUnlockType(NPCRelationship.UnlockType.DirectApproach))
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Small Tower", StartTime = 0851, DurationMinutes = 109 });
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (3)", StartTime = 1141, DurationMinutes = 309 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Cafe", StartTime = 1451, DurationMinutes = 99 });

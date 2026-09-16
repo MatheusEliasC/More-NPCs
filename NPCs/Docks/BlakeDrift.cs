@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -18,6 +19,7 @@ namespace MoreNPCs.NPCs
     public sealed class BlakeDrift : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -58,7 +60,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(0.58f, 0.48f, 0.2f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 620f, maxWeekly: 920f)
@@ -86,7 +87,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(randysBait, 0742, 94);
                     plan.Add(new WalkToSpec { Destination = underParkingGarage, StartTime = 0916, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.StayInBuilding(docksIndustrial, 1048, 118);

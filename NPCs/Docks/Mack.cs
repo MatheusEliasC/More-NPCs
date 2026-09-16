@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -6,12 +6,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class Mack : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -49,7 +51,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/Blazer/Blazer", new Color(0.33f, 0.24f, 0.14f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 600f, maxWeekly: 900f)
@@ -77,7 +78,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = behindFishShopMack, StartTime = 0905, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 250, 0) * Vector3.forward });
                     plan.Add(new WalkToSpec { Destination = waterMack, StartTime = 1058, FaceDestinationDirection = true });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Hyland Bank", StartTime = 1300, DurationMinutes = 185 });

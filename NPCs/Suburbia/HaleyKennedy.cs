@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -15,6 +16,7 @@ namespace MoreNPCs.NPCs
     public sealed class HaleyKennedy : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         private static readonly Color KidHair = new Color(0.612f, 0.51f, 0.29f);
         private static readonly Color KidSkin = new Color(0.81f, 0.648f, 0.496f);
@@ -53,7 +55,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sandals/Sandals", new Color(0.42f, 0.32f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 50f, maxWeekly: 250f)
@@ -81,7 +82,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.UseVendingMachine(0703);
                     plan.Add(new WalkToSpec { Destination = park, StartTime = 0718, FaceDestinationDirection = true });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Suburbia/Residential park/OutdoorBench (1)", StartTime = 0733, DurationMinutes = 72 });

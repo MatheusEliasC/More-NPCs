@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
 using S1API.Map;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -55,16 +56,12 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/RectangleFrameGlasses/RectangleFrameGlasses", new Color(0.15f, 0.15f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(2500f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(tunnelHome)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(tunnelHome);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -75,7 +72,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(tunnelHome, 0010, 1439);
                 });
         }
@@ -90,6 +86,7 @@ namespace MoreNPCs.NPCs
                 Appearance.Build();
                 Dealer.Home = Building.GetByName("Manor Tunnel Hatch");
                 WireDealerEvents();
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
                 Aggressiveness = 0.55f;
                 Region = Region.Uptown;
                 Schedule.Enable();

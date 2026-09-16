@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class BobbyCooley : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.236f, 0.236f, 0.236f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 50f, maxWeekly: 250f)
@@ -80,7 +81,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = shelf1, StartTime = 0720, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 340, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = behindcounter, StartTime = 0750, FaceDestinationDirection = true , Forward = Quaternion.Euler(0, 160, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = shelf2, StartTime = 0856, FaceDestinationDirection = true });

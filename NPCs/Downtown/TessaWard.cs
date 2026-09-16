@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 
 using S1API.Economy;
 
@@ -17,6 +17,7 @@ using S1API.Products;
 using S1API.Properties;
 
 using UnityEngine;
+using MoreNPCs.Utils;
 
 
 
@@ -29,6 +30,7 @@ namespace MoreNPCs.NPCs
     {
 
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
 
 
@@ -94,7 +96,6 @@ namespace MoreNPCs.NPCs
 
                 .WithSpawnPosition(spawnPos)
 
-                .EnsureCustomer()
 
                 .WithCustomerDefaults(cd =>
 
@@ -150,7 +151,6 @@ namespace MoreNPCs.NPCs
 
                 {
 
-                    plan.EnsureDealSignal();
 
                     plan.Add(new StayInBuildingSpec { BuildingName = "Tall Tower", StartTime = 0930, DurationMinutes = 104 });
 

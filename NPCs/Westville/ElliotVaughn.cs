@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Map;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -53,16 +54,12 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/RectangleFrameGlasses/RectangleFrameGlasses", new Color(0.18f, 0.18f, 0.22f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(1000f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(chemicalPlantB)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(chemicalPlantB);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -73,7 +70,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(chemicalPlantB, 0016, 1439);
                 });
         }
@@ -90,6 +86,7 @@ namespace MoreNPCs.NPCs
                 if (b != null && Dealer != null)
                     Dealer.Home = b;
                 WireDealerEvents();
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
                 Aggressiveness = 0.68f;
                 Region = Region.Westville;
                 Schedule.Enable();

@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -6,12 +6,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class EdwardBoog : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -45,7 +47,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.151f, 0.151f, 0.151f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 2000f, maxWeekly: 8000f)
@@ -73,7 +74,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Church", StartTime = 1141, DurationMinutes = 89 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Town hall", StartTime = 1311, DurationMinutes = 126 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Modern Mansion", StartTime = 1518, DurationMinutes = 178 });

@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class DariusCole : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Hands/Polex/Polex", new Color(1.000f, 0.756f, 0.212f));
                 })
                 .WithSpawnPosition(ocean)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 1000f, maxWeekly: 2000f)
@@ -82,7 +83,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = bleuball, StartTime = 0731, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
                     plan.UseVendingMachine(0940);
                     plan.StayInBuilding(bank, 0937, 299);

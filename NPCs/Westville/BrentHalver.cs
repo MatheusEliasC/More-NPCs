@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -7,12 +7,14 @@ using S1API.Map;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class BrentHalver : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -46,7 +48,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/Cap/Cap", new Color(0.28f, 0.31f, 0.26f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(400f, 600f)
@@ -65,7 +66,6 @@ namespace MoreNPCs.NPCs
                 .WithRelationshipDefaults(r => r.WithDelta(2.0f).SetUnlocked(false).SetUnlockType(NPCRelationship.UnlockType.DirectApproach).WithConnectionsById("george_greene", "charles_rowland", "elliot_vaughn"))
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "The Piss Hut", StartTime = 0852, DurationMinutes = 99 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Corner Store", StartTime = 1052, DurationMinutes = 104 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Sauerkraut Supreme", StartTime = 1227, DurationMinutes = 119 });

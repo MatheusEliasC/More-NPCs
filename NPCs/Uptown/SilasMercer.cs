@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using MoreNPCs.Supervisor;
 using S1API.Economy;
@@ -8,12 +8,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class SilasMercer : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -46,7 +48,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/RectangleFrameGlasses/RectangleFrameGlasses", new Color(0.15f, 0.15f, 0.15f));
                 })
                 .WithSpawnPosition(SupervisorConfig.DefaultSpawnPosition)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(0f, 0f)
@@ -74,7 +75,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                 });
         }
 
@@ -114,7 +114,8 @@ namespace MoreNPCs.NPCs
             {
                 var invType = FindGameType("ScheduleOne.NPCs.NPCInventory");
                 if (invType == null) return;
-                var inv = gameObject.GetComponent(invType) ?? gameObject.GetComponentInChildren(invType, true);
+                var il2cppInvType = Il2CppTypeHelper.To(invType);
+                var inv = gameObject.GetComponent(il2cppInvType) ?? gameObject.GetComponentInChildren(il2cppInvType, true);
                 if (inv == null) return;
                 var rf = invType.GetField("RandomCash", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                 var ri = invType.GetField("RandomItems", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
@@ -126,12 +127,7 @@ namespace MoreNPCs.NPCs
 
         private static System.Type? FindGameType(string fullName)
         {
-            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

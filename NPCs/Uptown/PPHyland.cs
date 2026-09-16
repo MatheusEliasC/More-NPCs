@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using MoreNPCs.Utils;
 using S1API.Economy;
 using S1API.Entities;
@@ -17,6 +17,7 @@ namespace MoreNPCs.NPCs
     public sealed class PPHyland : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -59,7 +60,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/DressShoes/DressShoes", new Color(0.08f, 0.08f, 0.09f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(10000f, 20000f)
@@ -91,7 +91,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "PPGrave", StartTime = 0500, DurationMinutes = 1439 });
                 });
         }

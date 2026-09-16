@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -8,6 +8,7 @@ using S1API.Map;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -18,6 +19,7 @@ namespace MoreNPCs.NPCs
     public sealed class RustySump : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -57,7 +59,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sandals/Sandals", new Color(0.42f, 0.28f, 0.18f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 280f, maxWeekly: 480f)
@@ -85,7 +86,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = crossroad, StartTime = 0755, FaceDestinationDirection = false });
                     plan.Add(new WalkToSpec { Destination = pit, StartTime = 0952, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = sewerBalcony, StartTime = 1218, FaceDestinationDirection = true });

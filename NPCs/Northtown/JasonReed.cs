@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -6,12 +6,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class JasonReed : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -46,7 +48,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.23529411852359773f, 0.23529411852359773f, 0.23529411852359773f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 400f, maxWeekly: 800f)
@@ -74,7 +75,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = outside, StartTime = 1750, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 240, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });

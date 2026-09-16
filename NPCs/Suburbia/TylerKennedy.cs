@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -15,6 +16,7 @@ namespace MoreNPCs.NPCs
     public sealed class TylerKennedy : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         private static readonly Color KidHair = new Color(0.6057f, 0.5035f, 0.2807f);
         private static readonly Color KidSkin = new Color(0.807f, 0.646f, 0.494f);
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.18f, 0.18f, 0.20f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 400f, maxWeekly: 800f)
@@ -80,7 +81,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Kennedy House", StartTime = 2248, DurationMinutes = 487 });
                     plan.UseVendingMachine(0656);
                     plan.Add(new WalkToSpec { Destination = park, StartTime = 0712, FaceDestinationDirection = true });

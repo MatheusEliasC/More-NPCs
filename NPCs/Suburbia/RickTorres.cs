@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -6,6 +6,7 @@ using S1API.Entities.Schedule;
 using S1API.Map;
 using S1API.Map.Buildings;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -53,16 +54,12 @@ namespace MoreNPCs.NPCs
                     av.WithBodyLayer("Avatar/Layers/Accessories/FingerlessGloves", new Color(0.13f, 0.13f, 0.15f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(3000f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(home)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(home);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -73,7 +70,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(home, 0016, 1439);
                 });
         }
@@ -88,6 +84,7 @@ namespace MoreNPCs.NPCs
                 Appearance.Build();
                 Dealer.Home = Building.GetByName("Long House Side Door");
                 WireDealerEvents();
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
                 Aggressiveness = 0.72f;
                 Region = Region.Suburbia;
                 Schedule.Enable();

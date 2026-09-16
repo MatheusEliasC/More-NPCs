@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -7,12 +7,14 @@ using S1API.Map;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class WadeHumphrey : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -43,7 +45,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/DressShoes/DressShoes", new Color(0.12f, 0.12f, 0.13f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(500f, 1000f)
@@ -71,7 +72,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "BodyShop Office", StartTime = 0905, DurationMinutes = 120 });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Downtown/TownCenter/OutdoorBench (1)", StartTime = 1115, DurationMinutes = 294 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "The Crimson Canary", StartTime = 1410, DurationMinutes = 149 });

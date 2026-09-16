@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -6,6 +6,7 @@ using S1API.Entities.Schedule;
 using S1API.Map;
 using S1API.Map.Buildings;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -55,16 +56,12 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Hands/Polex/Polex", goldAccent);
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(500f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(parentsHome)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(parentsHome);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -75,7 +72,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(parentsHome, 0009, 1439);
                 });
         }
@@ -101,6 +97,7 @@ namespace MoreNPCs.NPCs
                 Appearance.Build();
                 Dealer.Home = Building.Get<DansHardwareUpstairs>();
                 WireDealerEvents();
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
                 Aggressiveness = 0.55f;
                 Region = Region.Northtown;
                 Schedule.Enable();
