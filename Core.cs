@@ -30,7 +30,6 @@ namespace MoreNPCs
             _cartelWatcher.Update();
             _unlockWatcher.Update();
             _buildingSetup.Update();
-            ScheduleResumeOnLoad.Update();
             ReOfficePropertyBusinessUnlock.Update();
             PPHylandHandoverWarning.RefreshThrottled();
         }

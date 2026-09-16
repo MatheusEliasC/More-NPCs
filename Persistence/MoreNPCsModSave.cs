@@ -188,13 +188,6 @@ namespace MoreNPCs.Persistence
         protected override void OnLoaded()
         {
             base.OnLoaded();
-
-            // A save was loaded: custom NPCs will respawn and reset to their spawn point, but their
-            // daily schedule (enabled once in OnCreated) is not reliably re-armed by the game/S1API on
-            // reload. Arm a one-shot pass to re-enable mod NPC schedules once they are ready, so they
-            // resume walking their routine and can make timed deals instead of idling at spawn.
-            MoreNPCs.Utils.ScheduleResumeOnLoad.RequestResume();
-
             lock (_runtimeUnlockIds)
             {
                 foreach (var id in _runtimeUnlockIds)
