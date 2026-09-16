@@ -242,6 +242,7 @@
 		<Compile Include="Utils\NPCIdleLocations.cs" />
 		<Compile Include="Utils\Il2CppTypeHelper.cs" />
 		<Compile Include="Utils\NpcSafe.cs" />
+		<Compile Include="Utils\ScheduleResumeOnLoad.cs" />
 		<Compile Include="Utils\DealerStateHelper.cs" />
 		<Compile Include="Utils\GameDealerFinder.cs" />
 		<Compile Include="Utils\PlayerCashHelper.cs" />
