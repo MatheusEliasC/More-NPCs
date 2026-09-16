@@ -77,12 +77,78 @@ namespace MoreNPCs.Utils
                 // Native NavMeshAgent view (the actual thing that gets stuck / goes off-mesh).
                 var agentState = DescribeAgent(npc);
 
-                MelonLogger.Msg($"[FreezeDiag] {id}: {wrapperState} | {agentState}");
+                // Deal-detection view: proves whether the mod can see the pending contract at all.
+                var dealState = DescribeDeal(npc);
+
+                MelonLogger.Msg($"[FreezeDiag] {id}: {wrapperState} | {agentState} | {dealState}");
             }
             catch (Exception ex)
             {
                 MelonLogger.Msg($"[FreezeDiag] {id}: log failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Describe whether the mod can detect a pending deal on this customer (reflection on the real
+        /// runtime Customer type). Proves the KnockOut trigger's inputs.
+        /// </summary>
+        private static string DescribeDeal(NPC npc)
+        {
+            try
+            {
+                var go = npc.gameObject;
+                if (go == null) return "deal: NO_GAMEOBJECT";
+
+                Component? customer = null;
+                foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
+                    if (IsCustomerType(c)) { customer = c; break; }
+                if (customer == null)
+                    foreach (var c in go.GetComponentsInChildren<Component>(true) ?? Array.Empty<Component>())
+                        if (IsCustomerType(c)) { customer = c; break; }
+                if (customer == null) return "deal: CUSTOMER_COMPONENT_NOT_FOUND";
+
+                var ct = customer.GetType();
+                string contract = "?", awaiting = "?", dealTime = "?", atLoc = "?";
+                try
+                {
+                    var p = ct.GetProperty("CurrentContract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    contract = (p != null) ? (p.GetValue(customer) == null ? "null" : "SET") : "no-prop";
+                }
+                catch (Exception e) { contract = "err:" + e.Message; }
+                try
+                {
+                    var p = ct.GetProperty("IsAwaitingDelivery", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    awaiting = (p != null) ? p.GetValue(customer)?.ToString() ?? "?" : "no-prop";
+                }
+                catch (Exception e) { awaiting = "err:" + e.Message; }
+                try
+                {
+                    var m = ct.GetMethod("IsDealTime", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                    dealTime = (m != null) ? m.Invoke(customer, null)?.ToString() ?? "?" : "no-method";
+                }
+                catch (Exception e) { dealTime = "err:" + e.Message; }
+                try
+                {
+                    var m = ct.GetMethod("IsAtDealLocation", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                    atLoc = (m != null) ? m.Invoke(customer, null)?.ToString() ?? "?" : "no-method";
+                }
+                catch (Exception e) { atLoc = "err:" + e.Message; }
+
+                return $"deal: type={ct.Name} contract={contract} awaiting={awaiting} dealTime={dealTime} atLoc={atLoc}";
+            }
+            catch (Exception ex)
+            {
+                return $"deal: ERR({ex.Message})";
+            }
+        }
+
+        private static bool IsCustomerType(Component c)
+        {
+            if (c == null) return false;
+            var t = c.GetType();
+            return string.Equals(t.Name, "Customer", StringComparison.Ordinal)
+                && t.FullName != null
+                && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
         }
 
         /// <summary>
