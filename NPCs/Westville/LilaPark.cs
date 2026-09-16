@@ -85,7 +85,10 @@ namespace MoreNPCs.NPCs
                     plan.StayInBuilding(sauerkrautSupreme, 1224, 124);
                     plan.UseATM(1454);
                     plan.UseVendingMachine(1644);
-                    plan.Add(new StayInBuildingSpec { BuildingName = "Room 2", StartTime = 1854, DurationMinutes = 720 });
+                    // Leave an open window around the deal time (WithOrderTime 1820) so the automatic
+                    // customer deal-attendance can walk her to the meet point instead of competing with a
+                    // StayInBuilding. Home block starts well after the deal window closes.
+                    plan.Add(new StayInBuildingSpec { BuildingName = "Room 2", StartTime = 2030, DurationMinutes = 623 });
                 });
         }
 
