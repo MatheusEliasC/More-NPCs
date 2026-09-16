@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using ScheduleOne.Economy;
-using ScheduleOne.UI.Handover;
+using Il2CppScheduleOne.Economy;
+using Il2CppScheduleOne.UI.Handover;
 
 namespace MoreNPCs.Patches
 {

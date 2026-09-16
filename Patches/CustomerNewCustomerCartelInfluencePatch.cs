@@ -4,8 +4,8 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using MelonLoader;
 using MoreNPCs.Utils;
-using ScheduleOne.Economy;
-using ScheduleOne.NPCs.Relation;
+using Il2CppScheduleOne.Economy;
+using Il2CppScheduleOne.NPCs.Relation;
 using UnityEngine;
 
 namespace MoreNPCs.Patches
@@ -18,6 +18,18 @@ namespace MoreNPCs.Patches
     [HarmonyPatch]
     internal static class CustomerNewCustomerCartelInfluencePatch
     {
+        /// <summary>Skip the patch entirely if the target method no longer exists (game update), instead of throwing.</summary>
+        private static bool Prepare()
+        {
+            var m = AccessTools.Method(
+                typeof(Customer),
+                "OnCustomerUnlocked",
+                new[] { typeof(NPCRelationData.EUnlockType), typeof(bool) });
+            if (m == null)
+                MelonLogger.Msg("[MoreNPCs] Cartel influence patch skipped: Customer.OnCustomerUnlocked(EUnlockType,bool) not found in this game version.");
+            return m != null;
+        }
+
         private static MethodBase TargetMethod() =>
             AccessTools.Method(
                 typeof(Customer),
@@ -51,7 +63,7 @@ namespace MoreNPCs.Patches
             }
 
             if (!replaced)
-                MelonLogger.Warning("[MoreNPCs] Cartel influence transpiler: ldc.r4 -0.075 not found in Customer.OnCustomerUnlocked (game update?).");
+                MelonLogger.Msg("[MoreNPCs] Cartel influence tweak inactive: the -0.075 constant is no longer inlined in Customer.OnCustomerUnlocked (game update). Vanilla influence applies.");
 
             return list;
         }

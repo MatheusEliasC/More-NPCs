@@ -1,7 +1,7 @@
 using System;
 using HarmonyLib;
 using MelonLoader;
-using ScheduleOne.Product;
+using Il2CppScheduleOne.Product;
 using UnityEngine;
 
 namespace MoreNPCs.Patches

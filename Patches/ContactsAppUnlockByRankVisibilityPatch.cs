@@ -2,10 +2,10 @@ using System.Text;
 using HarmonyLib;
 using MelonLoader;
 using S1API.Cartel;
-using ScheduleOne.DevUtilities;
-using ScheduleOne.Map;
-using ScheduleOne.UI.Phone.ContactsApp;
-using TMPro;
+using Il2CppScheduleOne.DevUtilities;
+using Il2CppScheduleOne.Map;
+using Il2CppScheduleOne.UI.Phone.ContactsApp;
+using Il2CppTMPro;
 using UnityEngine;
 using UnityEngine.UI;
 

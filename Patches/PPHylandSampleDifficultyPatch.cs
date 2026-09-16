@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using HarmonyLib;
 using MelonLoader;
-using ScheduleOne.Economy;
+using Il2CppScheduleOne.Economy;
 
 namespace MoreNPCs.Patches
 {
@@ -83,13 +83,46 @@ namespace MoreNPCs.Patches
             return false;
         }
 
+        /// <summary>
+        /// Enumerates a handover items collection. The game passes an Il2Cpp <c>List&lt;ItemInstance&gt;</c>, which does NOT
+        /// implement <see cref="System.Collections.IEnumerable"/>, so we fall back to reflecting its <c>Count</c> + indexer.
+        /// </summary>
+        internal static IEnumerable<object?> EnumerateItems(object? itemsObj)
+        {
+            if (itemsObj == null) yield break;
+
+            // Preferred path: a real managed IEnumerable (Mono build or already-wrapped collection).
+            if (itemsObj is IEnumerable managed)
+            {
+                foreach (var item in managed)
+                    yield return item;
+                yield break;
+            }
+
+            // Il2Cpp List<T>: use Count property + get_Item(int) indexer via reflection.
+            var t = itemsObj.GetType();
+            var countProp = t.GetProperty("Count", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var getItem = t.GetMethod("get_Item", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { typeof(int) }, null);
+            if (countProp == null || getItem == null) yield break;
+
+            int count;
+            try { count = System.Convert.ToInt32(countProp.GetValue(itemsObj)); }
+            catch { yield break; }
+
+            for (int i = 0; i < count; i++)
+            {
+                object? item = null;
+                try { item = getItem.Invoke(itemsObj, new object[] { i }); }
+                catch { }
+                yield return item;
+            }
+        }
+
         /// <summary>True if handover has at least one item and every item is methamphetamine.</summary>
         internal static bool SampleContainsOnlyMethamphetamine(object? itemsObj)
         {
-            if (itemsObj is not IEnumerable enumerable) return false;
-
             var any = false;
-            foreach (var item in enumerable)
+            foreach (var item in EnumerateItems(itemsObj))
             {
                 if (item == null) continue;
                 any = true;
@@ -105,10 +138,8 @@ namespace MoreNPCs.Patches
         /// </summary>
         internal static float GetTotalMethSampleUnits(object? itemsObj)
         {
-            if (itemsObj is not IEnumerable enumerable) return 0f;
-
             float sum = 0f;
-            foreach (var item in enumerable)
+            foreach (var item in EnumerateItems(itemsObj))
             {
                 if (item == null) continue;
                 if (!ItemIsMethamphetamine(item)) continue;
@@ -393,6 +424,9 @@ namespace MoreNPCs.Patches
         {
             _swapSampleSuccessArgs = false;
             _target = null;
+            // Signature is GetSampleSuccess(List<ItemInstance> items, float x) — items-first in current builds.
+            // NOTE: the items parameter is an Il2Cpp List<> which does NOT implement System.Collections.IEnumerable,
+            // so we identify the collection as "the parameter that is not float" rather than testing IEnumerable.
             for (var ty = typeof(Customer); ty != null; ty = ty.BaseType)
             {
                 foreach (var m in ty.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
@@ -402,13 +436,17 @@ namespace MoreNPCs.Patches
                     if (ps.Length != 2) continue;
                     var a = ps[0].ParameterType;
                     var b = ps[1].ParameterType;
-                    if (typeof(IEnumerable).IsAssignableFrom(a) && b == typeof(float))
+
+                    // items-first: (collection, float)
+                    if (a != typeof(float) && b == typeof(float))
                     {
                         _target = m;
+                        _swapSampleSuccessArgs = false;
                         return true;
                     }
 
-                    if (a == typeof(float) && typeof(IEnumerable).IsAssignableFrom(b))
+                    // float-first: (float, collection)
+                    if (a == typeof(float) && b != typeof(float))
                     {
                         _target = m;
                         _swapSampleSuccessArgs = true;
@@ -417,7 +455,7 @@ namespace MoreNPCs.Patches
                 }
             }
 
-            MelonLogger.Warning("[MoreNPCs] PPHyland: Customer.GetSampleSuccess(IEnumerable,float) not found (game update?).");
+            MelonLogger.Warning("[MoreNPCs] PPHyland: Customer.GetSampleSuccess(items,float) not found (game update?).");
             return false;
         }
 
@@ -430,19 +468,13 @@ namespace MoreNPCs.Patches
 
             object? items = _swapSampleSuccessArgs ? __1 : __0;
 
-            if (items is not IEnumerable enumerable)
-            {
-                MelonLogger.Warning("[MoreNPCs] PPHyland: GetSampleSuccess args did not resolve to IEnumerable; skipping.");
-                return;
-            }
-
-            if (!PpHylandSampleDifficulty.SampleContainsOnlyMethamphetamine(enumerable))
+            if (!PpHylandSampleDifficulty.SampleContainsOnlyMethamphetamine(items))
             {
                 __result = 0f;
                 return;
             }
 
-            if (!PpHylandSampleDifficulty.MeetsHylandMethQuantityRequirement(enumerable))
+            if (!PpHylandSampleDifficulty.MeetsHylandMethQuantityRequirement(items))
             {
                 __result = 0f;
                 return;
