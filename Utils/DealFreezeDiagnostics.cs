@@ -113,7 +113,7 @@ namespace MoreNPCs.Utils
                     try
                     {
                         foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
-                            if (c != null) names.Add(c.GetType().FullName ?? c.GetType().Name);
+                            if (c != null) names.Add(Il2CppRealTypeName(c));
                     }
                     catch { }
                     var childNames = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
@@ -176,6 +176,27 @@ namespace MoreNPCs.Utils
             return string.Equals(t.Name, "Customer", StringComparison.Ordinal)
                 && t.FullName != null
                 && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
+        }
+
+        /// <summary>
+        /// The managed GetType() of an IL2CPP component is often the base UnityEngine.Component when the
+        /// concrete Il2CppInterop wrapper wasn't generated. Ask the IL2CPP runtime for the real type name.
+        /// </summary>
+        private static string Il2CppRealTypeName(Component c)
+        {
+            var managed = c.GetType().FullName ?? c.GetType().Name;
+            if (!string.Equals(managed, "UnityEngine.Component", StringComparison.Ordinal))
+                return managed;
+#if IL2CPP
+            try
+            {
+                var il2cppType = ((Il2CppSystem.Object)(object)c).GetIl2CppType();
+                var full = il2cppType?.FullName;
+                if (!string.IsNullOrEmpty(full)) return "il2cpp:" + full;
+            }
+            catch { }
+#endif
+            return managed;
         }
 
         /// <summary>
