@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -66,6 +66,7 @@ namespace MoreNPCs.NPCs
                 .WithRelationshipDefaults(r => r.WithDelta(2.0f).SetUnlocked(false).SetUnlockType(NPCRelationship.UnlockType.DirectApproach).WithConnectionsById("george_greene", "charles_rowland", "elliot_vaughn"))
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "The Piss Hut", StartTime = 0852, DurationMinutes = 99 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Corner Store", StartTime = 1052, DurationMinutes = 104 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Sauerkraut Supreme", StartTime = 1227, DurationMinutes = 119 });

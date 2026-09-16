@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using MoreNPCs.Utils;
 using S1API.Economy;
 using S1API.Entities;
@@ -12,7 +12,7 @@ using UnityEngine;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// P.P. Hyland — no last name; Tony hair (slightly darker than skin), no brows; gold chain &amp; Polex; mouth/wrinkles like Grunk.
+    /// P.P. Hyland � no last name; Tony hair (slightly darker than skin), no brows; gold chain &amp; Polex; mouth/wrinkles like Grunk.
     /// </summary>
     public sealed class PPHyland : NPC
     {
@@ -91,6 +91,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "PPGrave", StartTime = 0500, DurationMinutes = 1439 });
                 });
         }

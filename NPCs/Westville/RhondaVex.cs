@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -79,6 +79,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = managerSpot, StartTime = 0701, FaceDestinationDirection = true });
                     plan.StayInBuilding(westGasMart, 0731, 179); // ~3h, ends 1 min before vending
                     plan.UseVendingMachine(0911); // ~30 min break (close to vending machine)

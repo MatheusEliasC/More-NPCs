@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -25,7 +25,7 @@ namespace MoreNPCs.NPCs
             var charlesHouse = Building.Get<CharlesHouse>();
             Vector3 arcade = new Vector3(-22f, 1.065f, 45f);
             Vector3 busStop = new Vector3(-13.0495f, 1.065f, 95.5169f);
-            // Charles' House interior (Westville) — not sidewalk; aligns with overnight StayInBuilding
+            // Charles' House interior (Westville) � not sidewalk; aligns with overnight StayInBuilding
             Vector3 spawnPos = new Vector3(-55.2f, 1.065f, 72.8f);
 
             builder.WithIdentity("evan_rowland", "Evan", "Rowland")
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Arcade", StartTime = 0856, DurationMinutes = 119 });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Bus stops/Bus Stop (8)/OutdoorBench", StartTime = 1056, DurationMinutes = 129 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Arcade", StartTime = 1226, DurationMinutes = 119 });

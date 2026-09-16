@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 
 using S1API.Economy;
 
@@ -152,6 +152,7 @@ namespace MoreNPCs.NPCs
                 {
 
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Tall Tower", StartTime = 0930, DurationMinutes = 104 });
 
                     plan.Add(new WalkToSpec { Destination = plaza, StartTime = 1036, FaceDestinationDirection = true });

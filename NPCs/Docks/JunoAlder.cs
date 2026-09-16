@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -13,7 +13,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Juno Alder â€” docks odd-jobber who crosses paths with Kaelaâ€™s runs and Lisaâ€™s plant work.</summary>
+    /// <summary>Juno Alder — docks odd-jobber who crosses paths with Kaela’s runs and Lisa’s plant work.</summary>
     public sealed class JunoAlder : NPC
     {
         public override bool IsPhysical => true;
@@ -81,6 +81,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(randysBait, 0648, 102);
                     plan.StayInBuilding(fishWarehouse, 0848, 124);
                     plan.Add(new WalkToSpec { Destination = warehousePier, StartTime = 1052, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });

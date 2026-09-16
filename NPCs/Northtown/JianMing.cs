@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.NPCs.Northtown;
@@ -80,6 +80,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(northIndustrial, 0706, 232);
                     plan.StayInBuilding(chineseRestaurant, 0939, 91);
                     plan.UseVendingMachine(1031);

@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Carl's wife — Carl's House anchor with errands while Carl works nights.</summary>
+    /// <summary>Carl's wife � Carl's House anchor with errands while Carl works nights.</summary>
     public sealed class MarcyBundy : NPC
     {
         public override bool IsPhysical => true;
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Carl's House", StartTime = 0618, DurationMinutes = 312 });
                     plan.StayInBuilding(supermarket, 0931, 67);
                     plan.StayInBuilding(cafe, 1039, 71);

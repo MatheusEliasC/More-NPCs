@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = pos3, StartTime = 0848, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = pos1, StartTime = 1055, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = pos2, StartTime = 1247, FaceDestinationDirection = true });

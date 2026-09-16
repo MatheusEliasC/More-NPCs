@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -82,6 +82,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.LocationDialogue(rv, 0759, faceDestinationDir: true);
                     plan.UseVendingMachine(0826);
                     plan.UseATM(0905);

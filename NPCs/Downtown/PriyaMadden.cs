@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Tall Tower", StartTime = 0852, DurationMinutes = 149 });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Downtown/Diner/Round Outdoor Set/Outdoor chair", StartTime = 1117, DurationMinutes = 74 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Cafe", StartTime = 1252, DurationMinutes = 104 });

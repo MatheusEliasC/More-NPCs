@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Kennedy teen (15) — blonde like parents, suburban school/errand loop.</summary>
+    /// <summary>Kennedy teen (15) � blonde like parents, suburban school/errand loop.</summary>
     public sealed class TylerKennedy : NPC
     {
         public override bool IsPhysical => true;
@@ -81,6 +81,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Kennedy House", StartTime = 2248, DurationMinutes = 487 });
                     plan.UseVendingMachine(0656);
                     plan.Add(new WalkToSpec { Destination = park, StartTime = 0712, FaceDestinationDirection = true });

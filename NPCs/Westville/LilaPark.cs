@@ -79,6 +79,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(cornerStore, 0839, 109);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Westville/OutdoorBench (1)", StartTime = 1039, DurationMinutes = 104 });
                     plan.StayInBuilding(sauerkrautSupreme, 1224, 124);

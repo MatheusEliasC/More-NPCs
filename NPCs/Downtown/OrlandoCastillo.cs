@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 
 using S1API.Economy;
 
@@ -154,6 +154,7 @@ namespace MoreNPCs.NPCs
                 {
 
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Tall Tower", StartTime = 0855, DurationMinutes = 124 });
 
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (1)", StartTime = 1100, DurationMinutes = 109 });

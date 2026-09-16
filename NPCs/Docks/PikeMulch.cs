@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -14,7 +14,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Pike Mulch â€” low-level docks connector between Mack, Anna, and Manhole Mikeâ€™s circles.
+    /// Pike Mulch — low-level docks connector between Mack, Anna, and Manhole Mike’s circles.
     /// </summary>
     public sealed class PikeMulch : NPC
     {
@@ -83,6 +83,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(fishWarehouse, 0635, 108);
                     plan.Add(new WalkToSpec { Destination = sewerStorageEntrance, StartTime = 0843, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 210, 0) * Vector3.forward });
                     plan.StayInBuilding(hylandBank, 1018, 76);

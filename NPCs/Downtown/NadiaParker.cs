@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -79,7 +79,8 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    // Offset from Rhea Larkin (cafe 900 / slop 1115) — no concurrent cafe or slop overlap
+                    plan.EnsureDealSignal();
+                    // Offset from Rhea Larkin (cafe 900 / slop 1115) � no concurrent cafe or slop overlap
                     plan.StayInBuilding(cafe, 1050, 153);
                     plan.StayInBuilding(slopShop, 1324, 124);
                     plan.Add(new WalkToSpec { Destination = townCenter, StartTime = 1530, FaceDestinationDirection = true });

@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -82,6 +82,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.UseVendingMachine(0926);
                     plan.Add(new WalkToSpec { Destination = posA, StartTime = 0951, FaceDestinationDirection = true });
                     plan.StayInBuilding(petersRoom, 1200, 126);

@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Downtown customer — Apt 3; RE office + errands crowd. Knows Jennifer Rivera (listings) and Rhea Larkin (same downtown loop); Tessa for hook-ups. Charcoal blouse + skirt (no belt).</summary>
+    /// <summary>Downtown customer � Apt 3; RE office + errands crowd. Knows Jennifer Rivera (listings) and Rhea Larkin (same downtown loop); Tessa for hook-ups. Charcoal blouse + skirt (no belt).</summary>
     public sealed class HarperLin : NPC
     {
         public override bool IsPhysical => true;
@@ -81,6 +81,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Apartment Building 3", StartTime = 0820, DurationMinutes = 144 });
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (1)", StartTime = 1055, DurationMinutes = 69 });
                     plan.StayInBuilding(cafe, 1125, 124);

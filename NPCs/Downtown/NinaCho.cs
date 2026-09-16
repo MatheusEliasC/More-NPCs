@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Downtown customer — East Asian look aligned with in-game palette (Ming-family tones); docks-adjacent loop.</summary>
+    /// <summary>Downtown customer � East Asian look aligned with in-game palette (Ming-family tones); docks-adjacent loop.</summary>
     public sealed class NinaCho : NPC
     {
         public override bool IsPhysical => true;
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Boutique Store", StartTime = 0845, DurationMinutes = 134 });
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (2)", StartTime = 1100, DurationMinutes = 139 });
                     plan.StayInBuilding(cafe, 1240, 89);

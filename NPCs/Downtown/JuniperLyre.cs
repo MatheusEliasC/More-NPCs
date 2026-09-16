@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -24,7 +24,7 @@ namespace MoreNPCs.NPCs
             var cafe = Building.Get<Cafe>();
 
             Vector3 spawnPos = new Vector3(134.1605f, 6.0623f, 114.3804f);
-            // Open-world walk point (downtown town center area) — not a Building / StayInBuilding.
+            // Open-world walk point (downtown town center area) � not a Building / StayInBuilding.
             Vector3 townCenter = new Vector3(69.7895f, 1.065f, 15.4409f);
 
             builder.WithIdentity("juniper_lyre", "Juniper", "Lyre")
@@ -87,6 +87,7 @@ namespace MoreNPCs.NPCs
                 .WithSchedule(plan =>
                 {
 
+                    plan.EnsureDealSignal();
                     // After overpass sleep (~07:30): morning downtown, commute to Pillville shift, back downtown, night under overpass.
                     plan.UseVendingMachine(0740);
                     plan.Add(new WalkToSpec { Destination = townCenter, StartTime = 0810, FaceDestinationDirection = true });

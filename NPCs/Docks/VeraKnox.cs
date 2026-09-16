@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -13,7 +13,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Vera Knox — dock worker; ties to Maya Webb and Salvador Moreno.</summary>
+    /// <summary>Vera Knox � dock worker; ties to Maya Webb and Salvador Moreno.</summary>
     public sealed class VeraKnox : NPC
     {
         public override bool IsPhysical => true;
@@ -81,6 +81,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(fishWarehouse, 0718, 88);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Suburbia/Residential park/OutdoorBench (2)", StartTime = 0906, DurationMinutes = 124 });
                     plan.StayInBuilding(docksIndustrial, 1110, 118);

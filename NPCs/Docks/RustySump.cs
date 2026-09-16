@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -13,7 +13,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Rusty Sump â€” docks weirdo / scavenger (not hazmat fugitive, not Mikeâ€™s homeless sewer act).
+    /// Rusty Sump — docks weirdo / scavenger (not hazmat fugitive, not Mike’s homeless sewer act).
     /// Unlocks through the extra dock customers tied to Jane / Mack / Diesel / Mike / Anna.
     /// </summary>
     public sealed class RustySump : NPC
@@ -86,6 +86,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = crossroad, StartTime = 0755, FaceDestinationDirection = false });
                     plan.Add(new WalkToSpec { Destination = pit, StartTime = 0952, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = sewerBalcony, StartTime = 1218, FaceDestinationDirection = true });

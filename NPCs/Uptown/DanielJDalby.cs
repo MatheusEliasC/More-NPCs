@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -79,6 +79,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = frontDesk, StartTime = 1614, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = blackJack, StartTime = 1637, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 0, 0) * Vector3.forward});
                     plan.Add(new WalkToSpec { Destination = slotMachine1, StartTime = 1843, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 90, 0) * Vector3.forward});

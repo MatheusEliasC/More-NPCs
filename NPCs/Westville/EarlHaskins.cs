@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -88,6 +88,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(westGasMart, 0749, 104);
                     plan.Add(new WalkToSpec { Destination = oldCourt, StartTime = 0934, FaceDestinationDirection = true });
                     plan.StayInBuilding(arcade, 1154, 124);

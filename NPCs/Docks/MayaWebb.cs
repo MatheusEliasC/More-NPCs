@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -79,6 +79,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(chemicalPlantA, 0654, 178);
                     plan.Add(new WalkToSpec { Destination = breakSpot, StartTime = 0909, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 270, 0) * Vector3.forward });
                     plan.StayInBuilding(chemicalPlantA, 1209, 118);

@@ -1,4 +1,4 @@
-Ôªøusing System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -14,7 +14,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Blake Drift ‚Äî Gasmart-strip regular with the same wrong-energy lane as the freezer dealer, but sweaty, anxious, and not the ‚Äúfrozen‚Äù look.
+    /// Blake Drift ó Gasmart-strip regular with the same wrong-energy lane as the freezer dealer, but sweaty, anxious, and not the ìfrozenî look.
     /// </summary>
     public sealed class BlakeDrift : NPC
     {
@@ -87,6 +87,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(randysBait, 0742, 94);
                     plan.Add(new WalkToSpec { Destination = underParkingGarage, StartTime = 0916, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.StayInBuilding(docksIndustrial, 1048, 118);

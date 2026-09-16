@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.NPCs.Northtown;
@@ -85,6 +85,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(shack, 0015, 479);
                     plan.Add(new WalkToSpec { Destination = northLookout, StartTime = 0830, FaceDestinationDirection = true });
                     plan.StayInBuilding(budsBar, 0945, 104);

@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Kennedy child (6) — does not buy drugs; strongly dislikes all of them.</summary>
+    /// <summary>Kennedy child (6) � does not buy drugs; strongly dislikes all of them.</summary>
     public sealed class EmmaKennedy : NPC
     {
         public override bool IsPhysical => true;
@@ -80,6 +80,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Kennedy House", StartTime = 2150, DurationMinutes = 520 });
                     plan.UseVendingMachine(0612);
                     plan.Add(new WalkToSpec { Destination = park, StartTime = 0625, FaceDestinationDirection = true });

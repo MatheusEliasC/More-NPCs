@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -14,7 +14,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Nadia Rim â€” sewer-adjacent docks hanger-on tied to Mike, Anna, and Dieselâ€™s orbit.
+    /// Nadia Rim — sewer-adjacent docks hanger-on tied to Mike, Anna, and Diesel’s orbit.
     /// </summary>
     public sealed class NadiaRim : NPC
     {
@@ -83,6 +83,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(randysBait, 0718, 86);
                     plan.Add(new WalkToSpec { Destination = underMotel, StartTime = 0904, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 105, 0) * Vector3.forward });
                     plan.StayInBuilding(docksIndustrial, 1108, 118);

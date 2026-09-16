@@ -1,4 +1,4 @@
-Ôªøusing System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -13,7 +13,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Brack Silt ‚Äî stimmy sewer regular (likes hanging in the tunnels, not a ‚Äúlives in the grate‚Äù archetype).
+    /// Brack Silt ó stimmy sewer regular (likes hanging in the tunnels, not a ìlives in the grateî archetype).
     /// </summary>
     public sealed class BrackSilt : NPC
     {
@@ -85,6 +85,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = sewerCrossSection, StartTime = 0248, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = sewerWarehouse, StartTime = 0506, FaceDestinationDirection = true });
                     plan.Add(new WalkToSpec { Destination = pit, StartTime = 0733, FaceDestinationDirection = true });

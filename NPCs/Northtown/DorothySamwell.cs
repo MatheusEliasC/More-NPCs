@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -84,6 +84,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(dansHardwareUpstairs, 0006, 479);
                     plan.StayInBuilding(budsBar, 0806, 239);
                     plan.StayInBuilding(sauerkrautSupreme, 1206, 239);

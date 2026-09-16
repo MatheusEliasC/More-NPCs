@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -14,7 +14,7 @@ using MoreNPCs.Utils;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Dewey Koontz â€” dock rat who runs with Jane / Mack / Dieselâ€™s crowd. Unlocks from those vanilla-adjacent links.
+    /// Dewey Koontz — dock rat who runs with Jane / Mack / Diesel’s crowd. Unlocks from those vanilla-adjacent links.
     /// </summary>
     public sealed class DeweyKoontz : NPC
     {
@@ -87,6 +87,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(docksIndustrial, 0642, 85);
                     plan.Add(new WalkToSpec { Destination = roundRoom, StartTime = 0808, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.StayInBuilding(fishWarehouse, 0905, 117);

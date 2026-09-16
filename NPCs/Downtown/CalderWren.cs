@@ -1,4 +1,4 @@
-ï»¿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -52,7 +52,7 @@ namespace MoreNPCs.NPCs
                     av.WithFaceLayer("Avatar/Layers/Face/Face_Neutral", Color.black);
                     av.WithAccessoryLayer("Avatar/Accessories/FacialHair/Chevron/Chevron", av.HairColor);
 
-                    // Young downtown â€” same-age peer look; not paired with Marisâ€™s older â€œmentorâ€ vibe
+                    // Young downtown — same-age peer look; not paired with Maris’s older “mentor” vibe
                     av.WithBodyLayer("Avatar/Layers/Top/RolledButtonUp", new Color(0.30f, 0.34f, 0.38f));
                     av.WithBodyLayer("Avatar/Layers/Bottom/Jeans", new Color(0.22f, 0.24f, 0.30f));
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/OpenVest/OpenVest", new Color(0.26f, 0.22f, 0.20f));
@@ -90,6 +90,7 @@ namespace MoreNPCs.NPCs
                 .WithSchedule(plan =>
                 {
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "HAM Legal", StartTime = 0910, DurationMinutes = 119 });
                     plan.StayInBuilding(cafe, 1210, 94);
                     plan.UseATM(1405);

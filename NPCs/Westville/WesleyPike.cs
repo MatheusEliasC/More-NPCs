@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -67,6 +67,7 @@ namespace MoreNPCs.NPCs
                 .WithRelationshipDefaults(r => r.WithDelta(2.0f).SetUnlocked(false).SetUnlockType(NPCRelationship.UnlockType.DirectApproach).WithConnectionsById("kim_delaney", "rhonda_vex"))
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Jane's Caravan", StartTime = 0850, DurationMinutes = 104 });
                     plan.Add(new WalkToSpec { Destination = gasMart, StartTime = 1035, FaceDestinationDirection = true });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Corner Store", StartTime = 1205, DurationMinutes = 119 });

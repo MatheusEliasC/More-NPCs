@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Kennedy child (10) — blonde family look, park and errands after school.</summary>
+    /// <summary>Kennedy child (10) � blonde family look, park and errands after school.</summary>
     public sealed class HaleyKennedy : NPC
     {
         public override bool IsPhysical => true;
@@ -82,6 +82,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.UseVendingMachine(0703);
                     plan.Add(new WalkToSpec { Destination = park, StartTime = 0718, FaceDestinationDirection = true });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Suburbia/Residential park/OutdoorBench (1)", StartTime = 0733, DurationMinutes = 72 });

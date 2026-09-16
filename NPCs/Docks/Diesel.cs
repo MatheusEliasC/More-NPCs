@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -78,6 +78,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = behindFishShopDiesel, StartTime = 0839, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 250, 0) * Vector3.forward });
                     plan.Add(new WalkToSpec { Destination = waterDiesel, StartTime = 1032, FaceDestinationDirection = true });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Fish Warehouse", StartTime = 1203, DurationMinutes = 156 });

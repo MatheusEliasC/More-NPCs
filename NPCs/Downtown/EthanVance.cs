@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -12,7 +12,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Downtown customer — Slop Shop / bank / Apt 2 nights; formerly Uriah, not Evan (distinct from Evan Rowland).</summary>
+    /// <summary>Downtown customer � Slop Shop / bank / Apt 2 nights; formerly Uriah, not Evan (distinct from Evan Rowland).</summary>
     public sealed class EthanVance : NPC
     {
         public override bool IsPhysical => true;
@@ -76,6 +76,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Town hall", StartTime = 0935, DurationMinutes = 149 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Hyland Bank", StartTime = 1225, DurationMinutes = 119 });
                     plan.StayInBuilding(slop, 1545, 149);

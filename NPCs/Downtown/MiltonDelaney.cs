@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -77,6 +77,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Hyland Medical", StartTime = 1133, DurationMinutes = 89 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "HAM Legal", StartTime = 1303, DurationMinutes = 126 });
                     plan.Add(new WalkToSpec { Destination = hospital3, StartTime = 1510, FaceDestinationDirection = true });

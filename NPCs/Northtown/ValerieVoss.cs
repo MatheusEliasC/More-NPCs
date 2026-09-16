@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -83,6 +83,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new WalkToSpec { Destination = waterfront, StartTime = 0726, FaceDestinationDirection = true });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Northtown/Waterfront/OutdoorBench (1)", StartTime = 0806, DurationMinutes = 46 });
                     plan.UseATM(0853);

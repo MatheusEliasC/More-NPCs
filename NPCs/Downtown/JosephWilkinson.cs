@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -76,6 +76,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new UseATMSpec { StartTime = 0725 });
                     plan.Add(new WalkToSpec { Destination = hounddog, StartTime = 0818, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 330, 0) * Vector3.forward });
                     plan.Add(new WalkToSpec { Destination = hylandauto, StartTime = 0910, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 150, 0) * Vector3.forward });

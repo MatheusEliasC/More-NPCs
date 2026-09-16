@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -71,6 +71,7 @@ namespace MoreNPCs.NPCs
                 .WithRelationshipDefaults(r => r.WithDelta(2.0f).SetUnlocked(false).WithConnectionsById("lucy_pennington", "jennifer_rivera").SetUnlockType(NPCRelationship.UnlockType.DirectApproach))
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Small Tower", StartTime = 0851, DurationMinutes = 109 });
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (3)", StartTime = 1141, DurationMinutes = 309 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Cafe", StartTime = 1451, DurationMinutes = 99 });

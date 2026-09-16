@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -45,7 +45,7 @@ namespace MoreNPCs.NPCs
                     av.HairColor = new Color(0.32f, 0.18f, 0.40f);
 
                     av.WithFaceLayer("Avatar/Layers/Face/Face_SlightSmile", Color.black);
-                    // TiredEyes tints from layer color; use opaque black so it doesn’t pick up hair tint (purple read as bruised).
+                    // TiredEyes tints from layer color; use opaque black so it doesn�t pick up hair tint (purple read as bruised).
                     av.WithFaceLayer("Avatar/Layers/Face/TiredEyes", Color.black);
                     av.WithBodyLayer("Avatar/Layers/Bottom/FemaleUnderwear", new Color(0.72f, 0.67f, 0.64f));
                     av.WithBodyLayer("Avatar/Layers/Bottom/Jeans", new Color(0.20f, 0.22f, 0.28f));
@@ -84,6 +84,7 @@ namespace MoreNPCs.NPCs
                 .WithSchedule(plan =>
                 {
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Apartment Building 2", StartTime = 0010, DurationMinutes = 559 });
                     plan.StayInBuilding(cafe, 0930, 149);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Downtown/Diner/Round Outdoor Set/Outdoor chair", StartTime = 1200, DurationMinutes = 44 });

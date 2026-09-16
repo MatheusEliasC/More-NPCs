@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -13,7 +13,7 @@ using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Sable Reed — dark, sable-toned look.</summary>
+    /// <summary>Sable Reed � dark, sable-toned look.</summary>
     public sealed class SableReed : NPC
     {
         public override bool IsPhysical => true;
@@ -83,6 +83,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.StayInBuilding(docksIndustrial, 0655, 86);
                     plan.Add(new WalkToSpec { Destination = roundRoom, StartTime = 0821, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.StayInBuilding(randysBait, 0945, 94);

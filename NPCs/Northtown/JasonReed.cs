@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -20,7 +20,8 @@ namespace MoreNPCs.NPCs
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
             var northIndustrial = Building.Get<NorthIndustrialBuilding>();
-            Vector3 tacoticklers = new Vector3(-28.9266f, 1.065f, 74.6178f);
+            // Standing spot at the Taco Ticklers register, beside Kyle Cooley's counter position.
+            Vector3 register = new Vector3(-28.9266f, 1.065f, 74.6178f);
             Vector3 outside = new Vector3(-36.3346f, 1.065f, 75.6414f);
             Vector3 spawnPos = new Vector3(-28.9266f, 1.065f, 74.6178f);
             builder.WithIdentity("jason_reed", "Jason", "Reed")
@@ -78,11 +79,15 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
-                    plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth", StartTime = 0645, DurationMinutes = 664 });
+                    plan.EnsureDealSignal();
+                    // Jason works the Taco Ticklers register standing next to Kyle Cooley (like the
+                    // official mod), not sitting in a booth. LocationDialogue keeps him standing at the
+                    // counter spot and interactable through the work shift.
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
+                    plan.LocationDialogue(register, 0645, faceDestinationDir: true);
                     plan.Add(new WalkToSpec { Destination = outside, StartTime = 1750, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 240, 0) * Vector3.forward});
-                    plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
-                    plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (1)", StartTime = 1955, DurationMinutes = 93 });
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
+                    plan.LocationDialogue(register, 1955, faceDestinationDir: true);
                     plan.Add(new UseVendingMachineSpec { StartTime = 2129 });
                     plan.StayInBuilding(northIndustrial, 2212, 449);
                 });

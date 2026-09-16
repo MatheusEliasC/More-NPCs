@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -72,6 +72,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "BodyShop Office", StartTime = 0905, DurationMinutes = 120 });
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Downtown/TownCenter/OutdoorBench (1)", StartTime = 1115, DurationMinutes = 294 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "The Crimson Canary", StartTime = 1410, DurationMinutes = 149 });

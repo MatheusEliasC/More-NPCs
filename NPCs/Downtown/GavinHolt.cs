@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -81,6 +81,7 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "HAM Legal", StartTime = 0921, DurationMinutes = 119 });
                     plan.Add(new StayInBuildingSpec { BuildingName = "Cafe", StartTime = 1221, DurationMinutes = 94 });
                     plan.UseATM(1416);
