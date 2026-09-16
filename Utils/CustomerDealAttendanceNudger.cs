@@ -1,45 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using MelonLoader;
 using S1API.Entities;
 using UnityEngine;
-#if IL2CPP
-using GameCustomer = Il2CppScheduleOne.Economy.Customer;
-#endif
 
 namespace MoreNPCs.Utils
 {
     /// <summary>
-    /// Unfreezes mod customers that have an active arranged deal but stand idle at their spot instead of
-    /// walking to the meet point (confirmed via runtime logs: healthy NavMeshAgent, PathComplete, but
-    /// hasPath=False and no destination — the game's attend-deal driver never fires for these
-    /// runtime-instanced NPCs). A baseball-bat ragdoll reliably resets that state and they then walk to
-    /// the deal and complete it.
+    /// Unfreezes mod customers that have an arranged deal but stand idle instead of walking to it.
     ///
-    /// <para>The diagnostic proved the game <c>ScheduleOne.Economy.Customer</c> component IS present on the
-    /// NPC root — earlier detection failed only because <c>GetComponents&lt;Component&gt;().GetType()</c>
-    /// returns the base <c>UnityEngine.Component</c> for IL2CPP components. We now grab it with the typed
-    /// <c>GetComponent&lt;Il2CppScheduleOne.Economy.Customer&gt;()</c> (same pattern the mod's patches use)
-    /// and read its members directly — no fragile reflection.</para>
+    /// <para>Runtime logs proved: the customer has an active contract (<c>CurrentContract</c> is SET) yet
+    /// stands with a healthy-but-idle NavMeshAgent (onNavMesh, PathComplete, no destination). Critically,
+    /// while frozen the game reports <c>IsAwaitingDelivery=False</c> and <c>IsDealTime=False</c> — she never
+    /// even enters the deal-active state, so gating on those flags never triggers. A baseball-bat ragdoll
+    /// resets the stuck state and she then proceeds through the deal normally.</para>
     ///
-    /// <para>For any mod customer with an active, in-window, awaited contract that is standing idle we call
-    /// the official S1API <see cref="NPC.KnockOut"/> (the same reset the bat does); on recovery the game
-    /// re-drives it to the deal. Runs every 2s incl. right after a save load, per-NPC 20s cooldown.</para>
+    /// <para>So the trigger is simply: a mod customer that HAS an active contract and has been standing
+    /// still for a while (and isn't already knocked out) gets the official S1API <see cref="NPC.KnockOut"/>
+    /// — the same reset the bat does. Runs every 2s incl. right after a save load, with a per-NPC cooldown.
+    /// The Customer component is found via reflection on the component's REAL runtime type (typed
+    /// GetComponent proved unreliable for these IL2CPP components).</para>
     /// </summary>
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
         private const float ScanIntervalSeconds = 2f;
         private const float PerNpcCooldownSeconds = 20f;
-        private const float IdleConfirmSeconds = 4f;
+        // Stand still this long with an active contract before we ragdoll-reset (avoids hitting someone
+        // who is only briefly paused between path legs).
+        private const float IdleConfirmSeconds = 6f;
 
         private float _nextScanTime;
         private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _idleSinceByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Component?> _customerByNpcId = new Dictionary<string, Component?>(StringComparer.Ordinal);
 
         public void Update()
         {
-#if IL2CPP
             if (Time.time < _nextScanTime) return;
             _nextScanTime = Time.time + ScanIntervalSeconds;
 
@@ -54,18 +52,15 @@ namespace MoreNPCs.Utils
                 try
                 {
                     if (npc == null) continue;
-                    var type = npc.GetType();
-                    if (type == null || !string.Equals(type.Namespace, ModNpcNamespace, StringComparison.Ordinal))
-                        continue;
+                    var t = npc.GetType();
+                    if (t == null || !string.Equals(t.Namespace, ModNpcNamespace, StringComparison.Ordinal)) continue;
                     if (!npc.IsCustomer) continue;
                     Evaluate(npc);
                 }
                 catch { /* never let one NPC break the pass */ }
             }
-#endif
         }
 
-#if IL2CPP
         private void Evaluate(NPC npc)
         {
             var id = npc.ID;
@@ -74,13 +69,15 @@ namespace MoreNPCs.Utils
             if (_lastKnockByNpcId.TryGetValue(id, out var lastKnock) && Time.time - lastKnock < PerNpcCooldownSeconds)
                 return;
 
-            if (!HasPendingDeal(npc))
+            // Has an active arranged contract? (CurrentContract SET). We do NOT gate on IsAwaitingDelivery /
+            // IsDealTime because the logs show a frozen customer never reaches those states.
+            if (!HasActiveContract(npc, id))
             {
                 _idleSinceByNpcId.Remove(id);
                 return;
             }
 
-            // If already moving, she's heading to the deal — clear idle timer.
+            // If she is already moving, she's on her way — clear idle timer, no action.
             bool moving = false;
             var mv = NpcSafe.Movement(npc);
             if (mv != null) { try { moving = mv.IsMoving; } catch { } }
@@ -90,8 +87,10 @@ namespace MoreNPCs.Utils
                 return;
             }
 
+            // Don't re-hit someone mid-ragdoll.
             try { if (npc.IsKnockedOut) return; } catch { }
 
+            // Require sustained idle.
             if (!_idleSinceByNpcId.TryGetValue(id, out var idleSince))
             {
                 _idleSinceByNpcId[id] = Time.time;
@@ -104,7 +103,7 @@ namespace MoreNPCs.Utils
                 npc.KnockOut();
                 _lastKnockByNpcId[id] = Time.time;
                 _idleSinceByNpcId.Remove(id);
-                MelonLogger.Msg($"[DealNudge] {id}: idle with active deal -> KnockOut() to force attendance.");
+                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> KnockOut() to force attendance.");
             }
             catch (Exception ex)
             {
@@ -112,37 +111,61 @@ namespace MoreNPCs.Utils
             }
         }
 
-        private static bool HasPendingDeal(NPC npc)
+        /// <summary>True if the customer has a non-null CurrentContract. Reflection on the real runtime type.</summary>
+        private bool HasActiveContract(NPC npc, string id)
         {
-            GameCustomer? customer = GetCustomer(npc);
+            var customer = GetCustomerComponent(npc, id);
             if (customer == null) return false;
-
             try
             {
-                // Must have an active accepted contract.
-                if (customer.CurrentContract == null) return false;
-                // Must be awaiting the handover.
-                if (!customer.IsAwaitingDelivery) return false;
-                // Must be inside the deal window and not already at the spot.
-                if (!customer.IsDealTime()) return false;
-                if (customer.IsAtDealLocation()) return false;
-                return true;
+                var ct = customer.GetType();
+                var p = ct.GetProperty("CurrentContract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (p == null) return false;
+                return p.GetValue(customer) != null;
             }
             catch { return false; }
         }
 
-        private static GameCustomer? GetCustomer(NPC npc)
+        private Component? GetCustomerComponent(NPC npc, string id)
         {
+            if (_customerByNpcId.TryGetValue(id, out var cached) && cached != null)
+                return cached;
             try
             {
                 var go = npc.gameObject;
                 if (go == null) return null;
-                var c = go.GetComponent<GameCustomer>();
-                if (c != null) return c;
-                return go.GetComponentInChildren<GameCustomer>(true);
+                Component? found = null;
+                foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
+                    if (IsCustomerType(c)) { found = c; break; }
+                _customerByNpcId[id] = found;
+                return found;
             }
             catch { return null; }
         }
+
+        /// <summary>
+        /// Match the game Customer component by its REAL IL2CPP type name. The managed GetType() returns the
+        /// base UnityEngine.Component for these components, so we ask the IL2CPP runtime for the real type.
+        /// </summary>
+        private static bool IsCustomerType(Component c)
+        {
+            if (c == null) return false;
+            var t = c.GetType();
+            if (string.Equals(t.Name, "Customer", StringComparison.Ordinal)
+                && t.FullName != null && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0)
+                return true;
+#if IL2CPP
+            if (string.Equals(t.FullName, "UnityEngine.Component", StringComparison.Ordinal))
+            {
+                try
+                {
+                    var full = ((Il2CppSystem.Object)(object)c).GetIl2CppType()?.FullName;
+                    return full != null && full.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
+                }
+                catch { return false; }
+            }
 #endif
+            return false;
+        }
     }
 }
