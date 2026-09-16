@@ -105,7 +105,34 @@ namespace MoreNPCs.Utils
                 if (customer == null)
                     foreach (var c in go.GetComponentsInChildren<Component>(true) ?? Array.Empty<Component>())
                         if (IsCustomerType(c)) { customer = c; break; }
-                if (customer == null) return "deal: CUSTOMER_COMPONENT_NOT_FOUND";
+                if (customer == null)
+                {
+                    // Dump every component type on the NPC + children so we can see what the customer
+                    // component is actually called / where it lives. Deduped, root vs child noted.
+                    var names = new System.Collections.Generic.List<string>();
+                    try
+                    {
+                        foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
+                            if (c != null) names.Add(c.GetType().FullName ?? c.GetType().Name);
+                    }
+                    catch { }
+                    var childNames = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+                    try
+                    {
+                        foreach (var c in go.GetComponentsInChildren<Component>(true) ?? Array.Empty<Component>())
+                            if (c != null) childNames.Add(c.GetType().FullName ?? c.GetType().Name);
+                    }
+                    catch { }
+                    // Only report child types that mention Customer/Economy/Contract to keep the line short.
+                    var interesting = new System.Collections.Generic.List<string>();
+                    foreach (var n in childNames)
+                        if (n.IndexOf("Customer", StringComparison.OrdinalIgnoreCase) >= 0
+                            || n.IndexOf("Economy", StringComparison.OrdinalIgnoreCase) >= 0
+                            || n.IndexOf("Contract", StringComparison.OrdinalIgnoreCase) >= 0)
+                            interesting.Add(n);
+                    return "deal: CUSTOMER_COMPONENT_NOT_FOUND | root=[" + string.Join(", ", names)
+                        + "] | interestingChildren=[" + string.Join(", ", interesting) + "]";
+                }
 
                 var ct = customer.GetType();
                 string contract = "?", awaiting = "?", dealTime = "?", atLoc = "?";
