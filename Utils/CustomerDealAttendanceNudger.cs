@@ -5,6 +5,7 @@ using S1API.Entities;
 using UnityEngine;
 #if IL2CPP
 using GameCustomer = Il2CppScheduleOne.Economy.Customer;
+using GameNPCMovement = Il2CppScheduleOne.NPCs.NPCMovement;
 using Il2CppInterop.Runtime;
 #endif
 
@@ -13,29 +14,26 @@ namespace MoreNPCs.Utils
     /// <summary>
     /// Unfreezes mod customers that have an arranged deal but stand idle instead of walking to it.
     ///
-    /// <para>Logs proved the customer has an active <c>CurrentContract</c> but stays idle (healthy agent,
-    /// no destination) and never enters the deal-active flags. A baseball-bat ragdoll resets that stuck
-    /// state and she proceeds through the deal. So: any mod customer with an active contract that stands
-    /// still for a few seconds gets the official <see cref="NPC.KnockOut"/> — the same reset the bat does.</para>
+    /// <para>Confirmed: the frozen customer has an active <c>CurrentContract</c>, and once we intervene her
+    /// NavMeshAgent is <c>enabled=False / onNavMesh=False / PathInvalid</c> — the agent has fallen off the
+    /// navmesh, which is why she never gets a path. The clean fix (from the game's own NPCMovement API) is
+    /// <c>NPCMovement.WarpToNavMesh()</c> (+ a NavMeshAgent re-enable), which re-seats the agent on the mesh
+    /// so the game can drive her again — no knockout, no ragdoll.</para>
     ///
-    /// <para>The game <c>Customer</c> is an IL2CPP component whose managed wrapper isn't generated, so
-    /// <c>GetComponents&lt;Component&gt;().GetType()</c> reports the base type and managed reflection on it
-    /// is unreliable. We resolve it two ways and cast to the typed interop <c>Customer</c>: first the typed
-    /// <c>GetComponent&lt;Customer&gt;()</c>, then a fallback that scans components and <c>TryCast</c>s the
-    /// one whose IL2CPP type is Customer. Reading <c>CurrentContract</c> then goes through the typed
-    /// property — no fragile reflection. Detection outcome is logged for the watched NPCs.</para>
+    /// <para>We previously used <c>NPC.KnockOut()</c>, but the game's KnockOut has NO auto-recovery (only
+    /// <c>Revive()</c> gets them up), so customers stayed down and got knocked out repeatedly. Replaced with
+    /// the movement re-seat. Runs every 2s incl. right after a save load, per-NPC cooldown to avoid churn.</para>
     /// </summary>
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
         private const float ScanIntervalSeconds = 2f;
-        private const float PerNpcCooldownSeconds = 20f;
+        private const float PerNpcCooldownSeconds = 8f;
         private const float IdleConfirmSeconds = 6f;
 
         private float _nextScanTime;
-        private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> _lastFixByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _idleSinceByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
-        // Log the detection result once per NPC transition so we can see what the trigger sees.
         private readonly Dictionary<string, string> _lastDetectLog = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public void Update()
@@ -71,17 +69,13 @@ namespace MoreNPCs.Utils
             var id = npc.ID;
             if (string.IsNullOrEmpty(id)) return;
 
-            if (_lastKnockByNpcId.TryGetValue(id, out var lastKnock) && Time.time - lastKnock < PerNpcCooldownSeconds)
+            if (_lastFixByNpcId.TryGetValue(id, out var lastFix) && Time.time - lastFix < PerNpcCooldownSeconds)
                 return;
 
             var customer = GetCustomer(npc);
             bool hasContract = false;
-            if (customer != null)
-            {
-                try { hasContract = customer.CurrentContract != null; } catch { }
-            }
+            if (customer != null) { try { hasContract = customer.CurrentContract != null; } catch { } }
 
-            // Log detection state on change so we can diagnose without a second component.
             var state = customer == null ? "no-customer" : (hasContract ? "contract=SET" : "contract=null");
             if (!_lastDetectLog.TryGetValue(id, out var prev) || prev != state)
             {
@@ -104,8 +98,6 @@ namespace MoreNPCs.Utils
                 return;
             }
 
-            try { if (npc.IsKnockedOut) return; } catch { }
-
             if (!_idleSinceByNpcId.TryGetValue(id, out var idleSince))
             {
                 _idleSinceByNpcId[id] = Time.time;
@@ -113,41 +105,61 @@ namespace MoreNPCs.Utils
             }
             if (Time.time - idleSince < IdleConfirmSeconds) return;
 
-            try
+            // Re-seat the NavMeshAgent on the mesh so the game can path her to the deal — no knockout.
+            if (ReseatMovement(npc))
             {
-                npc.KnockOut();
-                _lastKnockByNpcId[id] = Time.time;
+                _lastFixByNpcId[id] = Time.time;
                 _idleSinceByNpcId.Remove(id);
-                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> KnockOut().");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[DealNudge] {id}: KnockOut failed: {ex.Message}");
+                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> re-seated agent on navmesh.");
             }
         }
 
-        /// <summary>Resolve the typed game Customer component (typed GetComponent, then IL2CPP TryCast fallback).</summary>
+        /// <summary>
+        /// Get the game NPCMovement component and re-seat the agent on the navmesh (WarpToNavMesh + agent
+        /// re-enable). This clears the off-mesh/disabled state that leaves the customer frozen.
+        /// </summary>
+        private static bool ReseatMovement(NPC npc)
+        {
+            GameNPCMovement? gm = GetGameMovement(npc);
+            if (gm == null) return false;
+            try
+            {
+                // Ensure the agent is on and snapped to the mesh, then clear any stale path.
+                try { gm.SetAgentEnabled(true); } catch { }
+                gm.WarpToNavMesh();
+                try { gm.SetAgentEnabled(true); } catch { }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[DealNudge] {npc.ID}: reseat failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static GameNPCMovement? GetGameMovement(NPC npc)
+        {
+            GameObject? go = null;
+            try { go = npc.gameObject; } catch { }
+            if (go == null) return null;
+            try
+            {
+                var c = go.GetComponent<GameNPCMovement>();
+                if (c != null) return c;
+                return go.GetComponentInChildren<GameNPCMovement>(true);
+            }
+            catch { return null; }
+        }
+
         private static GameCustomer? GetCustomer(NPC npc)
         {
             GameObject? go = null;
             try { go = npc.gameObject; } catch { }
             if (go == null) return null;
 
-            // 1) Typed lookup.
-            try
-            {
-                var c = go.GetComponent<GameCustomer>();
-                if (c != null) return c;
-            }
-            catch { }
-            try
-            {
-                var c = go.GetComponentInChildren<GameCustomer>(true);
-                if (c != null) return c;
-            }
-            catch { }
+            try { var c = go.GetComponent<GameCustomer>(); if (c != null) return c; } catch { }
+            try { var c = go.GetComponentInChildren<GameCustomer>(true); if (c != null) return c; } catch { }
 
-            // 2) Fallback: scan raw components, find the one whose IL2CPP type is Customer, TryCast it.
             try
             {
                 foreach (var comp in go.GetComponents<Component>() ?? Array.Empty<Component>())
