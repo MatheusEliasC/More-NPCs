@@ -16,6 +16,7 @@ namespace MoreNPCs
         private CartelStatusWatcher _cartelWatcher = new CartelStatusWatcher();
         private NPCUnlockWatcher _unlockWatcher = new NPCUnlockWatcher();
         private BuildingSetup _buildingSetup = new BuildingSetup();
+        private CustomerDealAttendanceNudger _dealNudger = new CustomerDealAttendanceNudger();
 
         public override void OnInitializeMelon()
         {
@@ -30,6 +31,7 @@ namespace MoreNPCs
             _cartelWatcher.Update();
             _unlockWatcher.Update();
             _buildingSetup.Update();
+            _dealNudger.Update();
             DealFreezeDiagnostics.Update();
             ReOfficePropertyBusinessUnlock.Update();
             PPHylandHandoverWarning.RefreshThrottled();
