@@ -10,41 +10,33 @@ namespace MoreNPCs.Utils
     /// <summary>
     /// Fixes mod customers freezing in place instead of walking to their arranged deal.
     ///
-    /// <para>ROOT CAUSE (confirmed via runtime NavMeshAgent logs + game decompile): the game drives a
-    /// customer to a deal through <c>Customer.UpdateDealAttendance()</c> → <c>CustomerAttendDealBehaviour</c>,
-    /// which issues the SetDestination to the delivery spot. On runtime-instanced custom NPCs that call is
-    /// not firing at deal time, so no destination is ever set (agent healthy, PathComplete, hasPath=False,
-    /// velocity 0). A ragdoll or the deal expiring forces a re-evaluation that finally moves her — which is
-    /// exactly why hitting her with a bat "unfreezes" her.</para>
+    /// <para>ROOT CAUSE (confirmed via runtime NavMeshAgent logs + game decompile): the game normally
+    /// drives a customer to a deal through <c>Customer.UpdateDealAttendance()</c> /
+    /// <c>CustomerAttendDealBehaviour</c>, which sets the NavMeshAgent destination to the delivery spot.
+    /// For runtime-instanced custom NPCs that never fires at deal time, so the customer just stands with a
+    /// healthy-but-idle agent (onNavMesh, PathComplete, hasPath=False, no destination) until a ragdoll or
+    /// deal expiry resets state.</para>
     ///
-    /// <para>FIX: a lightweight poller that, for every mod customer standing idle with an active,
-    /// in-window, not-yet-attended contract, calls the game's own <c>Customer.UpdateDealAttendance()</c>.
-    /// That re-activates the attend-deal behaviour and issues the correct walk — the same effect the ragdoll
-    /// has, done cleanly and generically for ALL mod customers (keyed off the game Customer component, not
-    /// hardcoded ids). Everything is reflection + try/catch so it degrades to a no-op if the game changes.</para>
+    /// <para>FIX: for every mod customer that has an active, in-window, awaited contract and is standing
+    /// idle, resolve the deal's delivery stand point and drive her there with the S1API movement API
+    /// (<c>Movement.SetDestination</c>) — the same walk the game should have issued. Re-issues on an
+    /// interval (retry) until she is moving / has arrived. Reflection uses the object's REAL runtime type
+    /// (via <c>instance.GetType()</c>), which is how IL2CPP components must be reflected — using a
+    /// name-resolved System.Type as the invocation target throws "Object does not match target type".</para>
     /// </summary>
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
-        private const float ScanIntervalSeconds = 1.5f;
-        // After a successful nudge, wait before nudging the same NPC again so we don't spam UpdateDealAttendance.
-        private const float PerNpcCooldownSeconds = 5f;
+        private const float ScanIntervalSeconds = 2f;
+        // Re-issue the destination at most this often per NPC (retry cadence) so we keep nudging a stuck
+        // customer until she actually starts moving, without spamming every frame.
+        private const float PerNpcRetrySeconds = 4f;
 
         private float _nextScanTime;
+        private readonly Dictionary<string, float> _lastPushByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
 
-        // Cached reflection handles for the game Customer type (resolved once).
-        private bool _reflectionReady;
-        private bool _reflectionFailed;
-        private Type? _customerType;
-        private PropertyInfo? _currentContractProp;
-        private PropertyInfo? _isAwaitingDeliveryProp;
-        private MethodInfo? _isDealTimeMethod;
-        private MethodInfo? _isAtDealLocationMethod;
-        private MethodInfo? _updateDealAttendanceMethod;
-
-        // Per-NPC cached Customer component + last-nudge time.
+        // Cache the resolved game Customer component per NPC id (its GetType() is the real runtime type).
         private readonly Dictionary<string, Component?> _customerByNpcId = new Dictionary<string, Component?>(StringComparer.Ordinal);
-        private readonly Dictionary<string, float> _lastNudgeByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
 
         public void Update()
         {
@@ -52,78 +44,91 @@ namespace MoreNPCs.Utils
             _nextScanTime = Time.time + ScanIntervalSeconds;
 
             if (!NPC.CustomNpcsReady) return;
-            EnsureReflection();
-            if (_reflectionFailed) return;
 
-            try
+            List<NPC>? all = null;
+            try { all = NPC.All; } catch { }
+            if (all == null) return;
+
+            foreach (var npc in all)
             {
-                var all = NPC.All;
-                if (all == null) return;
-
-                foreach (var npc in all)
+                try
                 {
                     if (npc == null) continue;
                     var type = npc.GetType();
                     if (type == null || !string.Equals(type.Namespace, ModNpcNamespace, StringComparison.Ordinal))
                         continue;
                     if (!npc.IsCustomer) continue;
-
-                    TryNudge(npc);
+                    TryDriveToDeal(npc);
                 }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[DealNudge] scan failed: {ex.Message}");
+                catch { /* never let one NPC break the pass */ }
             }
         }
 
-        private void TryNudge(NPC npc)
+        private void TryDriveToDeal(NPC npc)
         {
+            var id = npc.ID;
+            if (string.IsNullOrEmpty(id)) return;
+
+            // Retry cadence per NPC.
+            if (_lastPushByNpcId.TryGetValue(id, out var last) && Time.time - last < PerNpcRetrySeconds)
+                return;
+
+            var customer = GetCustomerComponent(npc, id);
+            if (customer == null) return;
+
+            // Reflect using the component's REAL runtime type (IL2CPP-safe).
+            var ct = customer.GetType();
+
+            // Active, awaited, in-window contract that isn't already being serviced.
+            var contract = GetMember(customer, ct, "CurrentContract");
+            if (contract == null) return;
+
+            if (GetMember(customer, ct, "IsAwaitingDelivery") is bool awaiting && !awaiting) return;
+            if (InvokeBool(customer, ct, "IsDealTime", true) == false) return;         // if unknown, assume true
+            if (InvokeBool(customer, ct, "IsAtDealLocation", false) == true) return;   // if unknown, assume not there
+
+            // Resolve the delivery stand point.
+            var standPoint = ResolveDealStandPoint(customer, ct);
+            if (!standPoint.HasValue) return;
+
+            // Only push if she is idle (not already walking there).
+            var mv = NpcSafe.Movement(npc);
+            if (mv == null) return;
+            try { if (mv.IsMoving) { return; } } catch { }
+
             try
             {
-                var id = npc.ID;
-                if (string.IsNullOrEmpty(id)) return;
-
-                // Per-NPC cooldown so a single nudge gets a chance to take effect before we try again.
-                if (_lastNudgeByNpcId.TryGetValue(id, out var last) && Time.time - last < PerNpcCooldownSeconds)
-                    return;
-
-                var customer = GetCustomerComponent(npc, id);
-                if (customer == null) return;
-
-                // Must have an active, awaited, in-window contract that isn't already being serviced.
-                var contract = _currentContractProp?.GetValue(customer);
-                if (contract == null) return;
-
-                if (_isAwaitingDeliveryProp != null &&
-                    _isAwaitingDeliveryProp.GetValue(customer) is bool awaiting && !awaiting)
-                    return;
-
-                if (_isDealTimeMethod != null &&
-                    _isDealTimeMethod.Invoke(customer, null) is bool dealTime && !dealTime)
-                    return;
-
-                if (_isAtDealLocationMethod != null &&
-                    _isAtDealLocationMethod.Invoke(customer, null) is bool atLocation && atLocation)
-                    return;
-
-                // Only nudge if she is idle (not already walking somewhere).
-                var mv = NpcSafe.Movement(npc);
-                if (mv != null)
-                {
-                    try { if (mv.IsMoving) return; } catch { }
-                }
-
-                // Re-run the game's own deal-attendance driver: activates CustomerAttendDealBehaviour and
-                // issues the walk to the delivery spot — the clean equivalent of the ragdoll reset.
-                _updateDealAttendanceMethod?.Invoke(customer, null);
-                _lastNudgeByNpcId[id] = Time.time;
-                MelonLogger.Msg($"[DealNudge] nudged deal attendance for {id}.");
+                mv.SetDestination(standPoint.Value);
+                _lastPushByNpcId[id] = Time.time;
+                MelonLogger.Msg($"[DealNudge] sent {id} to deal at {standPoint.Value:F1}.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[DealNudge] {npc?.ID}: {ex.Message}");
+                MelonLogger.Warning($"[DealNudge] {id}: SetDestination failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Resolve the world position the customer should stand at for the handover:
+        /// Customer.GetDeliveryLocation().CustomerStandPoint.position (reflected on real runtime types).
+        /// </summary>
+        private static Vector3? ResolveDealStandPoint(Component customer, Type ct)
+        {
+            try
+            {
+                var loc = InvokeMethod(customer, ct, "GetDeliveryLocation");
+                if (loc == null) return null;
+
+                var lt = loc.GetType();
+                var standPoint = GetMember(loc, lt, "CustomerStandPoint");
+                if (standPoint is Transform tr && tr != null) return tr.position;
+
+                // Fallback: TeleportPoint transform.
+                var teleport = GetMember(loc, lt, "TeleportPoint");
+                if (teleport is Transform tt && tt != null) return tt.position;
+            }
+            catch { }
+            return null;
         }
 
         private Component? GetCustomerComponent(NPC npc, string id)
@@ -134,45 +139,77 @@ namespace MoreNPCs.Utils
             try
             {
                 var go = npc.gameObject;
-                if (go == null || _customerType == null) return null;
-                var comp = go.GetComponentInChildren(Il2CppTypeHelper.To(_customerType), true) as Component;
-                _customerByNpcId[id] = comp;
-                return comp;
+                if (go == null) return null;
+
+                // Find the Customer component by real runtime type name (IL2CPP-safe: no name-resolved
+                // System.Type used as an invocation target). Search self + children.
+                var found = FindComponentByTypeName(go, "Customer");
+                _customerByNpcId[id] = found;
+                return found;
             }
             catch { return null; }
         }
 
-        private void EnsureReflection()
+        private static Component? FindComponentByTypeName(GameObject go, string simpleTypeName)
         {
-            if (_reflectionReady || _reflectionFailed) return;
-
             try
             {
-                _customerType = Il2CppTypeHelper.ResolveGameType("ScheduleOne.Economy.Customer");
-                if (_customerType == null) { _reflectionFailed = true; return; }
-
-                const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-                _currentContractProp = _customerType.GetProperty("CurrentContract", Flags);
-                _isAwaitingDeliveryProp = _customerType.GetProperty("IsAwaitingDelivery", Flags);
-                _isDealTimeMethod = _customerType.GetMethod("IsDealTime", Flags, null, Type.EmptyTypes, null);
-                _isAtDealLocationMethod = _customerType.GetMethod("IsAtDealLocation", Flags, null, Type.EmptyTypes, null);
-                _updateDealAttendanceMethod = _customerType.GetMethod("UpdateDealAttendance", Flags, null, Type.EmptyTypes, null);
-
-                // The one member we truly cannot do without is UpdateDealAttendance + CurrentContract.
-                if (_updateDealAttendanceMethod == null || _currentContractProp == null)
-                {
-                    MelonLogger.Msg("[DealNudge] disabled: Customer.UpdateDealAttendance/CurrentContract not found in this game version.");
-                    _reflectionFailed = true;
-                    return;
-                }
-
-                _reflectionReady = true;
+                foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
+                    if (IsCustomerType(c)) return c;
+                foreach (var c in go.GetComponentsInChildren<Component>(true) ?? Array.Empty<Component>())
+                    if (IsCustomerType(c)) return c;
             }
-            catch (Exception ex)
+            catch { }
+            return null;
+        }
+
+        private static bool IsCustomerType(Component c)
+        {
+            if (c == null) return false;
+            var t = c.GetType();
+            // Match ScheduleOne.Economy.Customer (Il2Cpp namespace variant included), exact type name "Customer".
+            return string.Equals(t.Name, "Customer", StringComparison.Ordinal)
+                && t.FullName != null
+                && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
+        }
+
+        // --- reflection helpers that operate on the REAL runtime type ---
+
+        private static object? GetMember(object instance, Type t, string name)
+        {
+            try
             {
-                MelonLogger.Warning($"[DealNudge] reflection init failed: {ex.Message}");
-                _reflectionFailed = true;
+                var p = t.GetProperty(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (p != null) return p.GetValue(instance);
+                var f = t.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (f != null) return f.GetValue(instance);
             }
+            catch { }
+            return null;
+        }
+
+        private static object? InvokeMethod(object instance, Type t, string name)
+        {
+            try
+            {
+                var m = t.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                if (m != null) return m.Invoke(instance, null);
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>Invoke a parameterless bool method; return <paramref name="fallback"/> if it can't be called.</summary>
+        private static bool? InvokeBool(object instance, Type t, string name, bool fallback)
+        {
+            try
+            {
+                var m = t.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                if (m == null) return fallback;
+                var r = m.Invoke(instance, null);
+                return r is bool b ? b : fallback;
+            }
+            catch { return fallback; }
         }
     }
 }
