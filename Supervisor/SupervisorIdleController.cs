@@ -13,18 +13,20 @@ namespace MoreNPCs.Supervisor
 
         public static void GoHome(NPC npc)
         {
-            if (npc?.Movement == null) return;
+            var movement = NpcSafe.Movement(npc);
+            if (movement == null) return;
             var home = NPCIdleLocations.GetSupervisorIdlePosition(npc.ID, HomePosition);
             var threshold = ArriveThreshold;
-            if (Vector3.Distance(npc.Movement.FootPosition, home) < threshold) return;
-            npc.Movement.SetDestination(home);
+            if (Vector3.Distance(movement.FootPosition, home) < threshold) return;
+            movement.SetDestination(home);
         }
 
         public static bool IsAtHome(NPC npc)
         {
-            if (npc?.Movement == null) return false;
+            var movement = NpcSafe.Movement(npc);
+            if (movement == null) return false;
             var threshold = ArriveThreshold;
-            return Vector3.Distance(npc.Movement.FootPosition, NPCIdleLocations.GetSupervisorIdlePosition(npc.ID, HomePosition)) < threshold;
+            return Vector3.Distance(movement.FootPosition, NPCIdleLocations.GetSupervisorIdlePosition(npc.ID, HomePosition)) < threshold;
         }
     }
 }

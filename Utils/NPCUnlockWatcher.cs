@@ -19,8 +19,9 @@ namespace MoreNPCs.Utils
     {
         private const float CheckIntervalSeconds = 30f;
         private const float LockEnforceIntervalSeconds = 5f;
-        /// <summary>Meet-at-player SMS + dialogue unlock refresh do not need 60 Hz; scanning <see cref="NPC.All"/> every frame is costly with many NPCs.</summary>
-        private const float NpcRelationScanIntervalSeconds = 0.25f;
+        /// <summary>Meet-at-player SMS + dialogue unlock refresh do not need 60 Hz; scanning <see cref="NPC.All"/> every frame is costly with many NPCs.
+        /// 1s is plenty responsive for a relationship-threshold SMS/dialogue toggle and cuts these two full NPC.All passes to 1/4 the rate.</summary>
+        private const float NpcRelationScanIntervalSeconds = 1.0f;
         private const int DominicDealerThreshold = 6;
         private const int SilasDealerThreshold = 12;
         /// <summary>Relationship level at which the NPC gets the “come to me” SMS option and one-time intro text.</summary>
@@ -51,8 +52,7 @@ namespace MoreNPCs.Utils
             if (Time.time >= _nextRelationScanTime)
             {
                 _nextRelationScanTime = Time.time + NpcRelationScanIntervalSeconds;
-                TryUnlockMeetAtPlayerSms();
-                TryRefreshDialogueState();
+                ScanRelationsOnce();
             }
 
             if (Time.time < _nextCheckTime) return;
@@ -60,7 +60,11 @@ namespace MoreNPCs.Utils
             TryUnlockRecurring();
         }
 
-        private void TryRefreshDialogueState()
+        /// <summary>
+        /// Single pass over NPC.All that does both the dialogue-unlock refresh and the meet-at-player SMS unlock,
+        /// so we iterate the (large) NPC list once per interval instead of twice.
+        /// </summary>
+        private void ScanRelationsOnce()
         {
             if (!NPC.CustomNpcsReady) return;
 
@@ -74,16 +78,42 @@ namespace MoreNPCs.Utils
                     if (npc?.Relationship == null) continue;
                     var id = npc.ID;
                     if (string.IsNullOrEmpty(id)) continue;
-                    if (!NpcIdsWithMeetAtPlayerSms.Contains(id) && !string.Equals(id, "pp_hyland", StringComparison.OrdinalIgnoreCase)) continue;
 
-                    var isUnlocked = npc.Relationship.IsUnlocked;
-                    if (_lastKnownUnlockStates.TryGetValue(id, out var previous) && previous == isUnlocked) continue;
+                    bool isMeetAtPlayer = NpcIdsWithMeetAtPlayerSms.Contains(id);
+                    if (!isMeetAtPlayer && !string.Equals(id, "pp_hyland", StringComparison.OrdinalIgnoreCase))
+                        continue;
 
-                    _lastKnownUnlockStates[id] = isUnlocked;
-                    RefreshDialogueFor(npc);
+                    var rel = npc.Relationship;
+                    var isUnlocked = rel.IsUnlocked;
+
+                    // (a) Dialogue refresh on unlock-state change.
+                    if (!_lastKnownUnlockStates.TryGetValue(id, out var previous) || previous != isUnlocked)
+                    {
+                        _lastKnownUnlockStates[id] = isUnlocked;
+                        RefreshDialogueFor(npc);
+                    }
+
+                    // (b) Meet-at-player SMS unlock at relationship threshold.
+                    if (isMeetAtPlayer && isUnlocked && !_meetAtPlayerSmsUnlockedThisSession.Contains(id)
+                        && rel.Delta >= MeetAtPlayerSmsRelationshipThreshold)
+                    {
+                        _meetAtPlayerSmsUnlockedThisSession.Add(id);
+                        if (string.Equals(id, "thomas_ashford", StringComparison.OrdinalIgnoreCase) && npc is ThomasAshford thomas)
+                            ManagerTextingSetup.AddComeToMeOption(thomas);
+                        else
+                            SupervisorTextingSetup.AddComeToMeOption(npc);
+                        if (!MoreNPCsModSave.NpcUnlockIntroTexts.HasBeenSentFor(id))
+                        {
+                            MoreNPCsModSave.NpcUnlockIntroTexts.MarkSentFor(id);
+                            if (string.Equals(id, "thomas_ashford", StringComparison.OrdinalIgnoreCase) && npc is ThomasAshford managerNpc)
+                                ManagerTextingSetup.SendMessageFrom(managerNpc, "You can tell me to come to you now.");
+                            else
+                                SupervisorTextingSetup.SendMessageFrom(npc, "You can tell me to come to you now.");
+                        }
+                    }
                 }
             }
-            catch (Exception ex) { MelonLogger.Warning($"Dialogue refresh check failed: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"Relation scan failed: {ex.Message}"); }
         }
 
         private void TryDailyRelationshipGain()
@@ -119,42 +149,6 @@ namespace MoreNPCs.Utils
                 }
             }
             catch (Exception ex) { MelonLogger.Warning($"Daily relationship gain failed: {ex.Message}"); }
-        }
-
-        private void TryUnlockMeetAtPlayerSms()
-        {
-            if (!NPC.CustomNpcsReady) return;
-            try
-            {
-                var all = NPC.All;
-                if (all == null) return;
-
-                foreach (var npc in all)
-                {
-                    if (npc?.Relationship == null || !npc.Relationship.IsUnlocked) continue;
-                    var id = npc.ID;
-                    if (string.IsNullOrEmpty(id) || !NpcIdsWithMeetAtPlayerSms.Contains(id)) continue;
-                    if (_meetAtPlayerSmsUnlockedThisSession.Contains(id)) continue;
-
-                    if (npc.Relationship.Delta >= MeetAtPlayerSmsRelationshipThreshold)
-                    {
-                        _meetAtPlayerSmsUnlockedThisSession.Add(id);
-                        if (string.Equals(id, "thomas_ashford", StringComparison.OrdinalIgnoreCase) && npc is ThomasAshford thomas)
-                            ManagerTextingSetup.AddComeToMeOption(thomas);
-                        else
-                            SupervisorTextingSetup.AddComeToMeOption(npc);
-                        if (!MoreNPCsModSave.NpcUnlockIntroTexts.HasBeenSentFor(id))
-                        {
-                            MoreNPCsModSave.NpcUnlockIntroTexts.MarkSentFor(id);
-                            if (string.Equals(id, "thomas_ashford", StringComparison.OrdinalIgnoreCase) && npc is ThomasAshford managerNpc)
-                                ManagerTextingSetup.SendMessageFrom(managerNpc, "You can tell me to come to you now.");
-                            else
-                                SupervisorTextingSetup.SendMessageFrom(npc, "You can tell me to come to you now.");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex) { MelonLogger.Warning($"Meet-at-player SMS unlock failed: {ex.Message}"); }
         }
 
         private void TryEnforceLockedState()
@@ -328,7 +322,10 @@ namespace MoreNPCs.Utils
         {
             try
             {
-                return GameDealerFinder.GetRecruitedDealersFromGame(true)?.Count ?? 0;
+                // Use the 2s cache instead of forcing a full-scene FindObjectsOfType<Transform> rescan every call.
+                // This is polled every 5s (lock enforce) and 30s (unlock) — the cache is fresh enough and the scan
+                // is expensive (scans all scene transforms + assembly type resolution per root).
+                return GameDealerFinder.GetRecruitedDealersFromGame(false)?.Count ?? 0;
             }
             catch
             {
