@@ -1,43 +1,46 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using MelonLoader;
 using S1API.Entities;
 using UnityEngine;
+#if IL2CPP
+using GameCustomer = Il2CppScheduleOne.Economy.Customer;
+using Il2CppInterop.Runtime;
+#endif
 
 namespace MoreNPCs.Utils
 {
     /// <summary>
     /// Unfreezes mod customers that have an arranged deal but stand idle instead of walking to it.
     ///
-    /// <para>Runtime logs proved: the customer has an active contract (<c>CurrentContract</c> is SET) yet
-    /// stands with a healthy-but-idle NavMeshAgent (onNavMesh, PathComplete, no destination). Critically,
-    /// while frozen the game reports <c>IsAwaitingDelivery=False</c> and <c>IsDealTime=False</c> — she never
-    /// even enters the deal-active state, so gating on those flags never triggers. A baseball-bat ragdoll
-    /// resets the stuck state and she then proceeds through the deal normally.</para>
+    /// <para>Logs proved the customer has an active <c>CurrentContract</c> but stays idle (healthy agent,
+    /// no destination) and never enters the deal-active flags. A baseball-bat ragdoll resets that stuck
+    /// state and she proceeds through the deal. So: any mod customer with an active contract that stands
+    /// still for a few seconds gets the official <see cref="NPC.KnockOut"/> — the same reset the bat does.</para>
     ///
-    /// <para>So the trigger is simply: a mod customer that HAS an active contract and has been standing
-    /// still for a while (and isn't already knocked out) gets the official S1API <see cref="NPC.KnockOut"/>
-    /// — the same reset the bat does. Runs every 2s incl. right after a save load, with a per-NPC cooldown.
-    /// The Customer component is found via reflection on the component's REAL runtime type (typed
-    /// GetComponent proved unreliable for these IL2CPP components).</para>
+    /// <para>The game <c>Customer</c> is an IL2CPP component whose managed wrapper isn't generated, so
+    /// <c>GetComponents&lt;Component&gt;().GetType()</c> reports the base type and managed reflection on it
+    /// is unreliable. We resolve it two ways and cast to the typed interop <c>Customer</c>: first the typed
+    /// <c>GetComponent&lt;Customer&gt;()</c>, then a fallback that scans components and <c>TryCast</c>s the
+    /// one whose IL2CPP type is Customer. Reading <c>CurrentContract</c> then goes through the typed
+    /// property — no fragile reflection. Detection outcome is logged for the watched NPCs.</para>
     /// </summary>
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
         private const float ScanIntervalSeconds = 2f;
         private const float PerNpcCooldownSeconds = 20f;
-        // Stand still this long with an active contract before we ragdoll-reset (avoids hitting someone
-        // who is only briefly paused between path legs).
         private const float IdleConfirmSeconds = 6f;
 
         private float _nextScanTime;
         private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _idleSinceByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
-        private readonly Dictionary<string, Component?> _customerByNpcId = new Dictionary<string, Component?>(StringComparer.Ordinal);
+        // Log the detection result once per NPC transition so we can see what the trigger sees.
+        private readonly Dictionary<string, string> _lastDetectLog = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public void Update()
         {
+#if IL2CPP
             if (Time.time < _nextScanTime) return;
             _nextScanTime = Time.time + ScanIntervalSeconds;
 
@@ -59,8 +62,10 @@ namespace MoreNPCs.Utils
                 }
                 catch { /* never let one NPC break the pass */ }
             }
+#endif
         }
 
+#if IL2CPP
         private void Evaluate(NPC npc)
         {
             var id = npc.ID;
@@ -69,15 +74,27 @@ namespace MoreNPCs.Utils
             if (_lastKnockByNpcId.TryGetValue(id, out var lastKnock) && Time.time - lastKnock < PerNpcCooldownSeconds)
                 return;
 
-            // Has an active arranged contract? (CurrentContract SET). We do NOT gate on IsAwaitingDelivery /
-            // IsDealTime because the logs show a frozen customer never reaches those states.
-            if (!HasActiveContract(npc, id))
+            var customer = GetCustomer(npc);
+            bool hasContract = false;
+            if (customer != null)
+            {
+                try { hasContract = customer.CurrentContract != null; } catch { }
+            }
+
+            // Log detection state on change so we can diagnose without a second component.
+            var state = customer == null ? "no-customer" : (hasContract ? "contract=SET" : "contract=null");
+            if (!_lastDetectLog.TryGetValue(id, out var prev) || prev != state)
+            {
+                _lastDetectLog[id] = state;
+                MelonLogger.Msg($"[DealNudge] {id}: {state}");
+            }
+
+            if (!hasContract)
             {
                 _idleSinceByNpcId.Remove(id);
                 return;
             }
 
-            // If she is already moving, she's on her way — clear idle timer, no action.
             bool moving = false;
             var mv = NpcSafe.Movement(npc);
             if (mv != null) { try { moving = mv.IsMoving; } catch { } }
@@ -87,10 +104,8 @@ namespace MoreNPCs.Utils
                 return;
             }
 
-            // Don't re-hit someone mid-ragdoll.
             try { if (npc.IsKnockedOut) return; } catch { }
 
-            // Require sustained idle.
             if (!_idleSinceByNpcId.TryGetValue(id, out var idleSince))
             {
                 _idleSinceByNpcId[id] = Time.time;
@@ -103,7 +118,7 @@ namespace MoreNPCs.Utils
                 npc.KnockOut();
                 _lastKnockByNpcId[id] = Time.time;
                 _idleSinceByNpcId.Remove(id);
-                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> KnockOut() to force attendance.");
+                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> KnockOut().");
             }
             catch (Exception ex)
             {
@@ -111,61 +126,46 @@ namespace MoreNPCs.Utils
             }
         }
 
-        /// <summary>True if the customer has a non-null CurrentContract. Reflection on the real runtime type.</summary>
-        private bool HasActiveContract(NPC npc, string id)
+        /// <summary>Resolve the typed game Customer component (typed GetComponent, then IL2CPP TryCast fallback).</summary>
+        private static GameCustomer? GetCustomer(NPC npc)
         {
-            var customer = GetCustomerComponent(npc, id);
-            if (customer == null) return false;
+            GameObject? go = null;
+            try { go = npc.gameObject; } catch { }
+            if (go == null) return null;
+
+            // 1) Typed lookup.
             try
             {
-                var ct = customer.GetType();
-                var p = ct.GetProperty("CurrentContract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (p == null) return false;
-                return p.GetValue(customer) != null;
+                var c = go.GetComponent<GameCustomer>();
+                if (c != null) return c;
             }
-            catch { return false; }
-        }
-
-        private Component? GetCustomerComponent(NPC npc, string id)
-        {
-            if (_customerByNpcId.TryGetValue(id, out var cached) && cached != null)
-                return cached;
+            catch { }
             try
             {
-                var go = npc.gameObject;
-                if (go == null) return null;
-                Component? found = null;
-                foreach (var c in go.GetComponents<Component>() ?? Array.Empty<Component>())
-                    if (IsCustomerType(c)) { found = c; break; }
-                _customerByNpcId[id] = found;
-                return found;
+                var c = go.GetComponentInChildren<GameCustomer>(true);
+                if (c != null) return c;
             }
-            catch { return null; }
-        }
+            catch { }
 
-        /// <summary>
-        /// Match the game Customer component by its REAL IL2CPP type name. The managed GetType() returns the
-        /// base UnityEngine.Component for these components, so we ask the IL2CPP runtime for the real type.
-        /// </summary>
-        private static bool IsCustomerType(Component c)
-        {
-            if (c == null) return false;
-            var t = c.GetType();
-            if (string.Equals(t.Name, "Customer", StringComparison.Ordinal)
-                && t.FullName != null && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0)
-                return true;
-#if IL2CPP
-            if (string.Equals(t.FullName, "UnityEngine.Component", StringComparison.Ordinal))
+            // 2) Fallback: scan raw components, find the one whose IL2CPP type is Customer, TryCast it.
+            try
             {
-                try
+                foreach (var comp in go.GetComponents<Component>() ?? Array.Empty<Component>())
                 {
-                    var full = ((Il2CppSystem.Object)(object)c).GetIl2CppType()?.FullName;
-                    return full != null && full.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
+                    if (comp == null) continue;
+                    try
+                    {
+                        var full = ((Il2CppSystem.Object)(object)comp).GetIl2CppType()?.FullName;
+                        if (full == null || full.IndexOf("Economy.Customer", StringComparison.Ordinal) < 0) continue;
+                        var cast = comp.TryCast<GameCustomer>();
+                        if (cast != null) return cast;
+                    }
+                    catch { }
                 }
-                catch { return false; }
             }
-#endif
-            return false;
+            catch { }
+            return null;
         }
+#endif
     }
 }
