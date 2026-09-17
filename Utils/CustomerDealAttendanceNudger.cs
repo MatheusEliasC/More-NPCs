@@ -37,13 +37,24 @@ namespace MoreNPCs.Utils
         private const float IdleConfirmSeconds = 1.5f;
         private const float RagdollDurationSeconds = 1.0f;
         private const float RagdollForce = 5f;
+        // The freeze only happens right after a save load; deals accepted during normal play work on
+        // their own. So only nudge within this window after NPCs become ready (a load), and cap the
+        // number of resets per NPC per load — together this stops the warp/ragdoll loops (e.g. a deal
+        // set for the next morning must not be reset all night).
+        private const float PostLoadActiveWindowSeconds = 120f;
+        private const int MaxResetsPerNpcPerLoad = 3;
 
         private float _nextScanTime;
         private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _idleSinceByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
-        private readonly Dictionary<string, string> _lastDetectLog = new Dictionary<string, string>(StringComparer.Ordinal);
         // NPCs we ragdolled, with the time we should end the ragdoll (deactivate).
         private readonly Dictionary<string, float> _reviveAtByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
+        // Reset attempts per NPC in the current post-load window (hard cap against loops).
+        private readonly Dictionary<string, int> _resetCountByNpcId = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        // Post-load window bookkeeping: when NPCs became ready (a load) and whether the window is open.
+        private bool _wasReady;
+        private float _readyAtTime;
 
         public void Update()
         {
@@ -54,7 +65,32 @@ namespace MoreNPCs.Utils
             if (Time.time < _nextScanTime) return;
             _nextScanTime = Time.time + ScanIntervalSeconds;
 
-            if (!NPC.CustomNpcsReady) return;
+            bool ready = false;
+            try { ready = NPC.CustomNpcsReady; } catch { }
+            if (!ready)
+            {
+                // Not loaded (or unloaded): reset window state so the NEXT load reopens the window.
+                if (_wasReady)
+                {
+                    _wasReady = false;
+                    _idleSinceByNpcId.Clear();
+                    _resetCountByNpcId.Clear();
+                }
+                return;
+            }
+
+            // First tick after becoming ready = a fresh load: (re)open the active window.
+            if (!_wasReady)
+            {
+                _wasReady = true;
+                _readyAtTime = Time.time;
+                _resetCountByNpcId.Clear();
+                _idleSinceByNpcId.Clear();
+            }
+
+            // The freeze only manifests shortly after load. Once the window closes, stop nudging so
+            // deals accepted during normal play (e.g. one set for the next morning) are never reset.
+            if (Time.time - _readyAtTime > PostLoadActiveWindowSeconds) return;
 
             List<NPC>? all = null;
             try { all = NPC.All; } catch { }
@@ -108,16 +144,13 @@ namespace MoreNPCs.Utils
             if (_lastKnockByNpcId.TryGetValue(id, out var lastKnock) && Time.time - lastKnock < PerNpcCooldownSeconds)
                 return;
 
+            // Hard cap: never reset the same NPC more than a few times per load (loop guard).
+            if (_resetCountByNpcId.TryGetValue(id, out var resets) && resets >= MaxResetsPerNpcPerLoad)
+                return;
+
             var customer = GetCustomer(npc);
             bool hasContract = false;
             if (customer != null) { try { hasContract = customer.CurrentContract != null; } catch { } }
-
-            var state = customer == null ? "no-customer" : (hasContract ? "contract=SET" : "contract=null");
-            if (!_lastDetectLog.TryGetValue(id, out var prev) || prev != state)
-            {
-                _lastDetectLog[id] = state;
-                MelonLogger.Msg($"[DealNudge] {id}: {state}");
-            }
 
             if (!hasContract)
             {
@@ -182,6 +215,7 @@ namespace MoreNPCs.Utils
                 _lastKnockByNpcId[id] = Time.time;
                 _idleSinceByNpcId.Remove(id);
                 _reviveAtByNpcId[id] = Time.time + RagdollDurationSeconds;
+                _resetCountByNpcId[id] = (_resetCountByNpcId.TryGetValue(id, out var rc) ? rc : 0) + 1;
                 if (haveDealPos)
                     MelonLogger.Msg($"[DealNudge] {id}: warped to deal {dealPos:F1} + ragdoll reset (contract kept). Waiting {PerNpcCooldownSeconds:F0}s to validate.");
                 else
