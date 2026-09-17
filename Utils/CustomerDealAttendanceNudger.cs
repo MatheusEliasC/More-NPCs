@@ -31,9 +31,9 @@ namespace MoreNPCs.Utils
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
         private const float ScanIntervalSeconds = 1f;
-        // Re-arm quickly: if a customer with an active deal refreezes after a reset, hit it again soon.
-        private const float PerNpcCooldownSeconds = 6f;
-        // Unfreeze almost immediately on load instead of making the player wait ~6s.
+        // After a warp+ragdoll reset, give the game ~10s to enter the deal state before retrying.
+        private const float PerNpcCooldownSeconds = 10f;
+        // Unfreeze almost immediately on load instead of making the player wait.
         private const float IdleConfirmSeconds = 1.5f;
         private const float RagdollDurationSeconds = 1.0f;
         private const float RagdollForce = 5f;
@@ -137,9 +137,9 @@ namespace MoreNPCs.Utils
             // If she's currently knocked out (by anything), let it be.
             try { if (npc.IsKnockedOut) return; } catch { }
 
-            // If she has already ARRIVED at the deal spot, do nothing — otherwise we'd keep
-            // ragdolling/teleporting her after she got there (the bug seen in testing).
-            if (IsAtDealLocation(customer))
+            // If the game already registers her as attending/awaiting the deal, we're done — leave her
+            // alone (otherwise we'd keep resetting her at the spot, the loop seen in testing).
+            if (IsAtDealLocation(customer) || IsAwaitingDelivery(customer))
             {
                 _idleSinceByNpcId.Remove(id);
                 return;
@@ -155,23 +155,17 @@ namespace MoreNPCs.Utils
             var gm = GetGameMovement(npc);
             if (gm == null) return;
 
-            // PREFERRED: teleport her straight to the deal delivery spot. The deal location lives on
-            // Contract.DeliveryLocation (discovered via runtime dump). Warping the NavMeshAgent there is
-            // instant and avoids the slow walk that nearly expired the deal.
+            // Sequence (per testing): WARP her onto the deal stand point, THEN ragdoll-reset in place.
+            // The warp puts her body exactly where the deal expects her; the ragdoll is what actually
+            // transitions her out of the frozen movement/behaviour state so the game's deal system picks
+            // her up (a warp alone moves the body but leaves the state stuck -> no delivery dialogue).
             Vector3 dealPos;
-            if (TryGetDealPosition(customer, out dealPos))
+            bool haveDealPos = TryGetDealPosition(customer, out dealPos);
+            if (haveDealPos)
             {
-                if (TryWarpTo(npc, gm, dealPos))
-                {
-                    _lastKnockByNpcId[id] = Time.time;
-                    _idleSinceByNpcId.Remove(id);
-                    MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> Warped to deal {dealPos:F1}.");
-                    return;
-                }
+                try { TryWarpTo(npc, gm, dealPos); } catch { }
             }
 
-            // FALLBACK: short physical ragdoll resets the stuck movement state WITHOUT touching
-            // health/contract; schedule DeactivateRagdoll so she gets back up and walks to the deal.
             try
             {
                 Vector3 foot;
@@ -180,12 +174,33 @@ namespace MoreNPCs.Utils
                 _lastKnockByNpcId[id] = Time.time;
                 _idleSinceByNpcId.Remove(id);
                 _reviveAtByNpcId[id] = Time.time + RagdollDurationSeconds;
-                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> Ragdoll reset (no deal pos; contract kept).");
+                if (haveDealPos)
+                    MelonLogger.Msg($"[DealNudge] {id}: warped to deal {dealPos:F1} + ragdoll reset (contract kept). Waiting {PerNpcCooldownSeconds:F0}s to validate.");
+                else
+                    MelonLogger.Msg($"[DealNudge] {id}: ragdoll reset (no deal pos; contract kept). Waiting {PerNpcCooldownSeconds:F0}s to validate.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[DealNudge] {id}: ragdoll failed: {ex.Message}");
+                MelonLogger.Warning($"[DealNudge] {id}: reset failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Returns true if the game already considers the customer to be awaiting the player's delivery.
+        /// Probed reflectively (IsAwaitingDelivery property). Fails safe to false.
+        /// </summary>
+        private static bool IsAwaitingDelivery(GameCustomer? customer)
+        {
+            if (customer == null) return false;
+            try
+            {
+                var p = ((object)customer).GetType().GetProperty("IsAwaitingDelivery",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (p == null) return false;
+                var r = p.GetValue(customer);
+                return r is bool b && b;
+            }
+            catch { return false; }
         }
 
         /// <summary>
