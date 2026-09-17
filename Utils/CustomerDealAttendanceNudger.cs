@@ -145,6 +145,14 @@ namespace MoreNPCs.Utils
                 return;
             }
 
+            // Never reset her while the player is talking to her (opening the chat would otherwise
+            // trigger a warp+ragdoll mid-conversation). Wait until the dialogue is closed.
+            if (IsInDialogue(npc))
+            {
+                _idleSinceByNpcId.Remove(id);
+                return;
+            }
+
             if (!_idleSinceByNpcId.TryGetValue(id, out var idleSince))
             {
                 _idleSinceByNpcId[id] = Time.time;
@@ -183,6 +191,55 @@ namespace MoreNPCs.Utils
             {
                 MelonLogger.Warning($"[DealNudge] {id}: reset failed: {ex.Message}");
             }
+        }
+
+        // Cached DialogueHandler type lookup (resolved once).
+        private static Type? _dialogueHandlerType;
+        private static bool _dialogueHandlerResolved;
+
+        /// <summary>
+        /// Returns true if the player is currently in a conversation with this NPC (its DialogueHandler
+        /// reports an active conversation). Uses the same game type PPHylandDialogue relies on
+        /// (ScheduleOne.Dialogue.DialogueHandler). Reflective + fails safe to false.
+        /// </summary>
+        private static bool IsInDialogue(NPC npc)
+        {
+            try
+            {
+                if (!_dialogueHandlerResolved)
+                {
+                    _dialogueHandlerType = Il2CppTypeHelper.ResolveGameType("ScheduleOne.Dialogue.DialogueHandler")
+                        ?? Il2CppTypeHelper.ResolveGameType("Il2CppScheduleOne.Dialogue.DialogueHandler");
+                    _dialogueHandlerResolved = true;
+                }
+                if (_dialogueHandlerType == null) return false;
+
+                GameObject? go = null;
+                try { go = npc.gameObject; } catch { }
+                if (go == null) return false;
+
+                var handler = go.GetComponentInChildren(Il2CppTypeHelper.To(_dialogueHandlerType), true) as Component;
+                if (handler == null) return false;
+
+                var ht = handler.GetType();
+                const BindingFlags F = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+                // Try common member names that flag an active conversation.
+                string[] boolNames = { "IsConversing", "isConversing", "InConversation", "isInConversation", "Conversing", "conversing" };
+                foreach (var name in boolNames)
+                {
+                    try
+                    {
+                        var p = ht.GetProperty(name, F);
+                        if (p != null && p.GetValue(handler) is bool pb) return pb;
+                        var f = ht.GetField(name, F);
+                        if (f != null && f.GetValue(handler) is bool fb) return fb;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return false;
         }
 
         /// <summary>

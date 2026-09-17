@@ -32,7 +32,6 @@ namespace MoreNPCs
             _unlockWatcher.Update();
             _buildingSetup.Update();
             _dealNudger.Update();
-            DealFreezeDiagnostics.Update();
             ReOfficePropertyBusinessUnlock.Update();
             PPHylandHandoverWarning.RefreshThrottled();
         }
