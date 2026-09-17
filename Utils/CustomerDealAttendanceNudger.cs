@@ -14,31 +14,39 @@ namespace MoreNPCs.Utils
     /// <summary>
     /// Unfreezes mod customers that have an arranged deal but stand idle instead of walking to it.
     ///
-    /// <para>Confirmed: the frozen customer has an active <c>CurrentContract</c>, and once we intervene her
-    /// NavMeshAgent is <c>enabled=False / onNavMesh=False / PathInvalid</c> — the agent has fallen off the
-    /// navmesh, which is why she never gets a path. The clean fix (from the game's own NPCMovement API) is
-    /// <c>NPCMovement.WarpToNavMesh()</c> (+ a NavMeshAgent re-enable), which re-seats the agent on the mesh
-    /// so the game can drive her again — no knockout, no ragdoll.</para>
+    /// <para>Testing established: a physical reset of the movement state unfreezes her (WarpToNavMesh did
+    /// nothing because the agent was already on-mesh — the freeze is a stuck movement/behaviour state). A
+    /// full KnockOut worked to reset it BUT cancelled the contract (the game clears CurrentContract on a
+    /// knocked-out customer), zeroing the deal. So we must reset WITHOUT touching health/knockout.</para>
     ///
-    /// <para>We previously used <c>NPC.KnockOut()</c>, but the game's KnockOut has NO auto-recovery (only
-    /// <c>Revive()</c> gets them up), so customers stayed down and got knocked out repeatedly. Replaced with
-    /// the movement re-seat. Runs every 2s incl. right after a save load, per-NPC cooldown to avoid churn.</para>
+    /// <para>FIX: use the game's short physical ragdoll on the movement component only —
+    /// <c>NPCMovement.ActivateRagdoll(...)</c> then <c>DeactivateRagdoll()</c> ~1s later. This is the
+    /// first-hit "reaction" the bat produces, it resets the stuck movement state, and it does NOT involve
+    /// NPCHealth, so the contract stays intact. For any mod customer with an active <c>CurrentContract</c>
+    /// standing idle >=6s we ragdoll then un-ragdoll. Runs every 2s incl. after load; per-NPC cooldown.</para>
     /// </summary>
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
         private const float ScanIntervalSeconds = 2f;
-        private const float PerNpcCooldownSeconds = 8f;
+        private const float PerNpcCooldownSeconds = 15f;
         private const float IdleConfirmSeconds = 6f;
+        private const float RagdollDurationSeconds = 1.0f;
+        private const float RagdollForce = 5f;
 
         private float _nextScanTime;
-        private readonly Dictionary<string, float> _lastFixByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _idleSinceByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _lastDetectLog = new Dictionary<string, string>(StringComparer.Ordinal);
+        // NPCs we ragdolled, with the time we should end the ragdoll (deactivate).
+        private readonly Dictionary<string, float> _reviveAtByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
 
         public void Update()
         {
 #if IL2CPP
+            // Process pending revives every tick (cheap: usually empty).
+            if (_reviveAtByNpcId.Count > 0) ProcessRevives();
+
             if (Time.time < _nextScanTime) return;
             _nextScanTime = Time.time + ScanIntervalSeconds;
 
@@ -64,12 +72,36 @@ namespace MoreNPCs.Utils
         }
 
 #if IL2CPP
+        private void ProcessRevives()
+        {
+            List<string>? due = null;
+            foreach (var kv in _reviveAtByNpcId)
+                if (Time.time >= kv.Value) (due ??= new List<string>()).Add(kv.Key);
+            if (due == null) return;
+
+            foreach (var id in due)
+            {
+                _reviveAtByNpcId.Remove(id);
+                try
+                {
+                    var npc = FindById(id);
+                    if (npc == null) continue;
+                    var gm = GetGameMovement(npc);
+                    if (gm != null) { try { gm.DeactivateRagdoll(); } catch { } }
+                    MelonLogger.Msg($"[DealNudge] {id}: ragdoll ended (reset done).");
+                }
+                catch { }
+            }
+        }
+
         private void Evaluate(NPC npc)
         {
             var id = npc.ID;
             if (string.IsNullOrEmpty(id)) return;
 
-            if (_lastFixByNpcId.TryGetValue(id, out var lastFix) && Time.time - lastFix < PerNpcCooldownSeconds)
+            // Skip if we recently acted or a revive is pending for this NPC.
+            if (_reviveAtByNpcId.ContainsKey(id)) return;
+            if (_lastKnockByNpcId.TryGetValue(id, out var lastKnock) && Time.time - lastKnock < PerNpcCooldownSeconds)
                 return;
 
             var customer = GetCustomer(npc);
@@ -98,6 +130,9 @@ namespace MoreNPCs.Utils
                 return;
             }
 
+            // If she's currently knocked out (by anything), let it be.
+            try { if (npc.IsKnockedOut) return; } catch { }
+
             if (!_idleSinceByNpcId.TryGetValue(id, out var idleSince))
             {
                 _idleSinceByNpcId[id] = Time.time;
@@ -105,36 +140,37 @@ namespace MoreNPCs.Utils
             }
             if (Time.time - idleSince < IdleConfirmSeconds) return;
 
-            // Re-seat the NavMeshAgent on the mesh so the game can path her to the deal — no knockout.
-            if (ReseatMovement(npc))
-            {
-                _lastFixByNpcId[id] = Time.time;
-                _idleSinceByNpcId.Remove(id);
-                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> re-seated agent on navmesh.");
-            }
-        }
-
-        /// <summary>
-        /// Get the game NPCMovement component and re-seat the agent on the navmesh (WarpToNavMesh + agent
-        /// re-enable). This clears the off-mesh/disabled state that leaves the customer frozen.
-        /// </summary>
-        private static bool ReseatMovement(NPC npc)
-        {
-            GameNPCMovement? gm = GetGameMovement(npc);
-            if (gm == null) return false;
+            // Short physical ragdoll resets the stuck movement state WITHOUT touching health/contract;
+            // schedule DeactivateRagdoll so she gets back up and proceeds to the deal.
+            var gm = GetGameMovement(npc);
+            if (gm == null) return;
             try
             {
-                // Ensure the agent is on and snapped to the mesh, then clear any stale path.
-                try { gm.SetAgentEnabled(true); } catch { }
-                gm.WarpToNavMesh();
-                try { gm.SetAgentEnabled(true); } catch { }
-                return true;
+                Vector3 foot;
+                try { foot = gm.FootPosition; } catch { foot = npc.gameObject.transform.position; }
+                gm.ActivateRagdoll(foot, Vector3.up, RagdollForce);
+                _lastKnockByNpcId[id] = Time.time;
+                _idleSinceByNpcId.Remove(id);
+                _reviveAtByNpcId[id] = Time.time + RagdollDurationSeconds;
+                MelonLogger.Msg($"[DealNudge] {id}: active contract + idle {IdleConfirmSeconds:F0}s -> Ragdoll reset (contract kept).");
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[DealNudge] {npc.ID}: reseat failed: {ex.Message}");
-                return false;
+                MelonLogger.Warning($"[DealNudge] {id}: ragdoll failed: {ex.Message}");
             }
+        }
+
+        private static NPC? FindById(string id)
+        {
+            try
+            {
+                var all = NPC.All;
+                if (all == null) return null;
+                foreach (var n in all)
+                    if (n != null && string.Equals(n.ID, id, StringComparison.Ordinal)) return n;
+            }
+            catch { }
+            return null;
         }
 
         private static GameNPCMovement? GetGameMovement(NPC npc)
@@ -144,8 +180,8 @@ namespace MoreNPCs.Utils
             if (go == null) return null;
             try
             {
-                var c = go.GetComponent<GameNPCMovement>();
-                if (c != null) return c;
+                var m = go.GetComponent<GameNPCMovement>();
+                if (m != null) return m;
                 return go.GetComponentInChildren<GameNPCMovement>(true);
             }
             catch { return null; }
