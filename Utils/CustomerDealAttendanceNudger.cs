@@ -43,6 +43,9 @@ namespace MoreNPCs.Utils
         // set for the next morning must not be reset all night).
         private const float PostLoadActiveWindowSeconds = 120f;
         private const int MaxResetsPerNpcPerLoad = 3;
+        // If she's within this distance of the deal stand point after a reset, treat her as arrived and
+        // stop resetting (avoids re-ragdolling while the player talks to her at the spot).
+        private const float DealArrivedRadius = 2.5f;
 
         private float _nextScanTime;
         private readonly Dictionary<string, float> _lastKnockByNpcId = new Dictionary<string, float>(StringComparer.Ordinal);
@@ -196,12 +199,37 @@ namespace MoreNPCs.Utils
             var gm = GetGameMovement(npc);
             if (gm == null) return;
 
+            Vector3 dealPos;
+            bool haveDealPos = TryGetDealPosition(customer, out dealPos);
+
+            // TEMP DIAGNOSTIC (owen_crowe only): capture why the guards didn't block, so the next version
+            // can pinpoint the remaining loop. Cheap, scoped to one id, remove once confirmed.
+            if (string.Equals(id, "owen_crowe", StringComparison.OrdinalIgnoreCase))
+            {
+                float dist = -1f;
+                try { if (haveDealPos) dist = Vector2.Distance(new Vector2(gm.FootPosition.x, gm.FootPosition.z), new Vector2(dealPos.x, dealPos.z)); } catch { }
+                int rcNow = _resetCountByNpcId.TryGetValue(id, out var rcx) ? rcx : 0;
+                MelonLogger.Msg($"[DealNudge][DIAG] owen_crowe: haveDealPos={haveDealPos} distToSpot={dist:F2} resetsThisLoad={rcNow} awaiting={IsAwaitingDelivery(customer)} atLoc={IsAtDealLocation(customer)} inDialogue={IsInDialogue(npc)} customerResolved={(customer != null)}");
+            }
+
+            // If she's ALREADY standing on the deal spot AND we've reset her at least once this load,
+            // she has arrived — stop (the deal is being served here). This is a position-based guard that
+            // does not rely on IsAwaitingDelivery/IsAtDealLocation, which read intermittently on mod NPCs
+            // and let the ragdoll keep firing during the delivery chat (the Owen loop).
+            if (haveDealPos)
+            {
+                bool alreadyResetThisLoad = _resetCountByNpcId.TryGetValue(id, out var priorResets) && priorResets > 0;
+                if (alreadyResetThisLoad && IsAtPosition(npc, gm, dealPos, DealArrivedRadius))
+                {
+                    _idleSinceByNpcId.Remove(id);
+                    return;
+                }
+            }
+
             // Sequence (per testing): WARP her onto the deal stand point, THEN ragdoll-reset in place.
             // The warp puts her body exactly where the deal expects her; the ragdoll is what actually
             // transitions her out of the frozen movement/behaviour state so the game's deal system picks
             // her up (a warp alone moves the body but leaves the state stuck -> no delivery dialogue).
-            Vector3 dealPos;
-            bool haveDealPos = TryGetDealPosition(customer, out dealPos);
             if (haveDealPos)
             {
                 try { TryWarpTo(npc, gm, dealPos); } catch { }
@@ -225,6 +253,26 @@ namespace MoreNPCs.Utils
             {
                 MelonLogger.Warning($"[DealNudge] {id}: reset failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// True if the NPC's current position is within <paramref name="radius"/> of <paramref name="target"/>
+        /// (horizontal distance; ignores small Y differences). Uses the movement foot position, falling back
+        /// to the transform. Fails safe to false.
+        /// </summary>
+        private static bool IsAtPosition(NPC npc, GameNPCMovement gm, Vector3 target, float radius)
+        {
+            try
+            {
+                Vector3 pos;
+                try { pos = gm.FootPosition; }
+                catch { pos = npc.gameObject.transform.position; }
+
+                var a = new Vector2(pos.x, pos.z);
+                var b = new Vector2(target.x, target.z);
+                return Vector2.Distance(a, b) <= radius;
+            }
+            catch { return false; }
         }
 
         // Cached DialogueHandler type lookup (resolved once).
