@@ -199,7 +199,19 @@ namespace MoreNPCs.Utils
                 }
                 catch { }
                 if (contractObj != null)
+                {
                     DumpLocationMembersOf("contract:" + contractObj.GetType().Name, contractObj, parts);
+
+                    // Drill into Contract.DeliveryLocation — that's where the actual deal spot lives.
+                    try
+                    {
+                        var dp = contractObj.GetType().GetProperty("DeliveryLocation", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var deliveryObj = dp?.GetValue(contractObj);
+                        if (deliveryObj != null)
+                            DumpLocationMembersOf("delivery:" + deliveryObj.GetType().Name, deliveryObj, parts);
+                    }
+                    catch (Exception e) { parts.Add("delivery-err:" + e.Message); }
+                }
             }
             catch (Exception e) { parts.Add("dump-err:" + e.Message); }
             return string.Join(" ", parts);
