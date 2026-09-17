@@ -9,6 +9,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -19,6 +20,7 @@ namespace MoreNPCs.NPCs
     public sealed class PiperSloan : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -56,7 +58,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/BucketHat/BucketHat", new Color(0.28f, 0.36f, 0.22f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 300f, maxWeekly: 700f)
@@ -91,8 +92,11 @@ namespace MoreNPCs.NPCs
                     plan.StayInBuilding(northWarehouse, 1130, 119);
                     plan.UseATM(1310);
                     plan.StayInBuilding(chineseRestaurant, 1630, 89);
-                    plan.UseVendingMachine(1810);
-                    plan.StayInBuilding(shack, 1840, 394);
+                    // Leave an open window around the deal time (WithOrderTime 1830) so the automatic
+                    // customer deal-attendance can route her to the meet point. The old schedule pinned
+                    // her into the shack at 1840 (and a vending at 1810) right on top of the deal, which
+                    // made her freeze until the deal expired. Home block now starts after the deal window.
+                    plan.StayInBuilding(shack, 2015, 239);
                 });
         }
 

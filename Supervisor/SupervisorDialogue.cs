@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -334,7 +334,8 @@ namespace MoreNPCs.Supervisor
                 var invType = FindGameType("ScheduleOne.NPCs.NPCInventory");
                 var storageMenuType = FindGameType("ScheduleOne.UI.StorageMenu");
                 if (invType == null || storageMenuType == null) return;
-                var inv = go.GetComponent(invType) ?? go.GetComponentInChildren(invType, true);
+                var il2cppInvType = Il2CppTypeHelper.To(invType);
+                var inv = go.GetComponent(il2cppInvType) ?? go.GetComponentInChildren(il2cppInvType, true);
                 if (inv == null) return;
                 var instanceProp = storageMenuType.GetProperty("Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.FlattenHierarchy);
                 var storageMenu = instanceProp?.GetValue(null);
@@ -363,9 +364,24 @@ namespace MoreNPCs.Supervisor
         {
             var player = Player.Local;
             if (player?.Transform == null) return null;
-            var playerInv = player.Transform.gameObject.GetComponent(invType);
+            var playerInv = player.Transform.gameObject.GetComponent(Il2CppTypeHelper.To(invType));
             if (playerInv == null) return null;
             return new object[] { playerInv, npcInv, $"{displayName}'s Inventory", $"Trade items with {displayName}." };
+        }
+
+        /// <summary>Runs once when the supervisor trade menu closes: kick off the post-trade activity chain.</summary>
+        private static void OnTradeClosed()
+        {
+            try
+            {
+                var n = SupervisorRegistry.LastTradedSupervisor;
+                var id = SupervisorRegistry.LastTradedSupervisorId;
+                SupervisorRegistry.LastTradedSupervisor = null;
+                SupervisorRegistry.LastTradedSupervisorId = null;
+                if (n != null && !string.IsNullOrEmpty(id))
+                    SupervisorActivityChain.ScheduleChainDelayed(n, id);
+            }
+            catch { }
         }
 
         private static void RegisterTradeClosedHandler(object storageMenu, Type storageMenuType)
@@ -375,37 +391,29 @@ namespace MoreNPCs.Supervisor
                 var onClosedProp = storageMenuType.GetProperty("onClosed", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                 var onClosed = onClosedProp?.GetValue(storageMenu);
                 if (onClosed == null) return;
+
+#if IL2CPP
+                // onClosed is a game UnityEvent; its AddListener takes an Il2Cpp UnityAction. A plain C# lambda
+                // is not an Il2Cpp delegate, so build one from a managed Action via DelegateSupport.
+                if (onClosed is UnityEngine.Events.UnityEvent unityEvent)
+                {
+                    System.Action managed = OnTradeClosed;
+                    var il2cppAction = Il2CppInterop.Runtime.DelegateSupport.ConvertDelegate<UnityEngine.Events.UnityAction>(managed);
+                    unityEvent.AddListener(il2cppAction);
+                }
+#else
                 var addListener = onClosed.GetType().GetMethod("AddListener", new[] { typeof(UnityEngine.Events.UnityAction) });
                 if (addListener == null) return;
-                UnityEngine.Events.UnityAction handler = null!;
-                handler = () =>
-                {
-                    try
-                    {
-                        var removeListener = onClosed.GetType().GetMethod("RemoveListener", new[] { typeof(UnityEngine.Events.UnityAction) });
-                        removeListener?.Invoke(onClosed, new object[] { handler });
-                        var n = SupervisorRegistry.LastTradedSupervisor;
-                        var id = SupervisorRegistry.LastTradedSupervisorId;
-                        SupervisorRegistry.LastTradedSupervisor = null;
-                        SupervisorRegistry.LastTradedSupervisorId = null;
-                        if (n != null && !string.IsNullOrEmpty(id))
-                            SupervisorActivityChain.ScheduleChainDelayed(n, id);
-                    }
-                    catch { }
-                };
+                UnityEngine.Events.UnityAction handler = OnTradeClosed;
                 addListener.Invoke(onClosed, new object[] { handler });
+#endif
             }
             catch { }
         }
 
         private static Type? FindGameType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

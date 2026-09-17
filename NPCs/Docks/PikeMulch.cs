@@ -9,15 +9,17 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Pike Mulch â€” low-level docks connector between Mack, Anna, and Manhole Mikeâ€™s circles.
+    /// Pike Mulch — low-level docks connector between Mack, Anna, and Manhole Mike’s circles.
     /// </summary>
     public sealed class PikeMulch : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/CombatBoots/CombatBoots", new Color(0.2f, 0.18f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 580f, maxWeekly: 850f)

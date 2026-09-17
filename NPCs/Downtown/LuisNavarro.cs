@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -6,6 +6,7 @@ using S1API.Entities.Schedule;
 using S1API.Map;
 using S1API.Map.Buildings;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -55,16 +56,12 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.14f, 0.14f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(2000f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(groceryBackdoor)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(groceryBackdoor);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -75,7 +72,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(groceryBackdoor, 0016, 1439);
                 });
         }
@@ -90,6 +86,7 @@ namespace MoreNPCs.NPCs
                 Appearance.Build();
                 Dealer.Home = Building.GetByName("Grocery Backdoor");
                 WireDealerEvents();
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
                 Aggressiveness = 0.68f;
                 Region = Region.Downtown;
                 Schedule.Enable();

@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class MarisEldridge : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -43,7 +45,7 @@ namespace MoreNPCs.NPCs
                     av.HairColor = new Color(0.32f, 0.18f, 0.40f);
 
                     av.WithFaceLayer("Avatar/Layers/Face/Face_SlightSmile", Color.black);
-                    // TiredEyes tints from layer color; use opaque black so it doesnâ€™t pick up hair tint (purple read as bruised).
+                    // TiredEyes tints from layer color; use opaque black so it doesn’t pick up hair tint (purple read as bruised).
                     av.WithFaceLayer("Avatar/Layers/Face/TiredEyes", Color.black);
                     av.WithBodyLayer("Avatar/Layers/Bottom/FemaleUnderwear", new Color(0.72f, 0.67f, 0.64f));
                     av.WithBodyLayer("Avatar/Layers/Bottom/Jeans", new Color(0.20f, 0.22f, 0.28f));
@@ -51,7 +53,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/CollarJacket/CollarJacket", new Color(0.22f, 0.24f, 0.28f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(500f, 900f)
@@ -82,8 +83,8 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Apartment Building 2", StartTime = 0010, DurationMinutes = 559 });
                     plan.StayInBuilding(cafe, 0930, 149);
                     plan.Add(new SitSpec { SeatSetPath = "Map/Hyland Point/Region_Downtown/Diner/Round Outdoor Set/Outdoor chair", StartTime = 1200, DurationMinutes = 44 });

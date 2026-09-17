@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -229,12 +229,7 @@ namespace MoreNPCs.Supervisor
 
         private static Type FindType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

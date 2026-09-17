@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Reflection;
 using HarmonyLib;
@@ -88,10 +88,11 @@ namespace MoreNPCs.Utils
             if (customerType == null) return null;
 
             var go = npc.gameObject;
-            var onRoot = go.GetComponent(customerType);
+            var il2cppCustomerType = Il2CppTypeHelper.To(customerType);
+            var onRoot = go.GetComponent(il2cppCustomerType);
             if (onRoot != null) return onRoot;
 
-            var children = go.GetComponentsInChildren(customerType, true);
+            var children = go.GetComponentsInChildren(il2cppCustomerType, true);
             if (children != null && children.Length > 0)
                 return children[0];
 
@@ -123,7 +124,7 @@ namespace MoreNPCs.Utils
                         boolMethod = mi;
                 }
 
-                // Dialogue-initiated samples often use SampleAccepted(bool) — try before parameterless.
+                // Dialogue-initiated samples often use SampleAccepted(bool) â€” try before parameterless.
                 if (boolMethod != null)
                 {
                     boolMethod.Invoke(comp, new object[] { true });
@@ -189,10 +190,10 @@ namespace MoreNPCs.Utils
                     ?? FindGameType("Il2CppScheduleOne.Dialogue.DialogueController");
                 if (handlerType == null || controllerType == null) return;
 
-                var handler = npc.gameObject.GetComponentInChildren(handlerType, true) as Component;
+                var handler = npc.gameObject.GetComponentInChildren(Il2CppTypeHelper.To(handlerType), true) as Component;
                 if (handler == null) return;
 
-                var controller = handler.GetComponent(controllerType);
+                var controller = handler.GetComponent(Il2CppTypeHelper.To(controllerType));
                 if (controller == null) return;
 
                 controllerType.GetMethod("ClearOverrideContainer", BindingFlags.Public | BindingFlags.Instance)
@@ -206,13 +207,7 @@ namespace MoreNPCs.Utils
 
         private static Type? FindGameType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
 
         private static bool IsBoolParameter(Type t)

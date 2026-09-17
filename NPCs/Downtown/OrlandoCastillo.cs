@@ -17,6 +17,7 @@ using S1API.Products;
 using S1API.Properties;
 
 using UnityEngine;
+using MoreNPCs.Utils;
 
 
 
@@ -29,6 +30,7 @@ namespace MoreNPCs.NPCs
     {
 
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
 
 
@@ -96,7 +98,6 @@ namespace MoreNPCs.NPCs
 
                 .WithSpawnPosition(spawnPos)
 
-                .EnsureCustomer()
 
                 .WithCustomerDefaults(cd =>
 
@@ -152,8 +153,8 @@ namespace MoreNPCs.NPCs
 
                 {
 
-                    plan.EnsureDealSignal();
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "Tall Tower", StartTime = 0855, DurationMinutes = 124 });
 
                     plan.Add(new SitSpec { SeatSetPath = "@Businesses/Taco Ticklers/Fast Food Booth (1)", StartTime = 1100, DurationMinutes = 109 });

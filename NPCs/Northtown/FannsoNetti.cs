@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
@@ -6,6 +6,7 @@ using S1API.Entities.Schedule;
 using S1API.Map;
 using S1API.Map.Buildings;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -24,9 +25,11 @@ namespace MoreNPCs.NPCs
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
             var northwarehouse = Building.Get<NorthWarehouse>();
-            Vector3 spawnPos = new Vector3(-41.7551f, -2.9354f, 171.8678f);
+            // Unique spawn — previously shared the exact position of VincentReeves and PiperSloan, which
+            // stacked NPCs at the same spot and contributed to FannsoNetti getting stuck at the warehouse.
+            Vector3 spawnPos = new Vector3(-45.31f, -2.9354f, 168.42f);
 
-            builder.WithIdentity("fannsonetti", "FannsoNetti", "")
+            builder.WithIdentity("fannso_netti", "Fannso", "Netti")
                 .WithAppearanceDefaults(av =>
                 {
                     // Matches Vincent Reeves’ prior look (warehouse regular — not default-unlocked).
@@ -56,16 +59,12 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.28f, 0.22f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureDealer()
                 .WithDealerDefaults(dd =>
                 {
                     dd.WithSigningFee(500f)
                         .WithCut(0.20f)
                         .WithDealerType(DealerType.PlayerDealer)
-                        .WithHome(northwarehouse)
-                        .AllowInsufficientQuality(false)
-                        .AllowExcessQuality(true)
-                        .WithCompletedDealsVariable("dealer_completed_deals");
+                        .WithHome(northwarehouse);
                 })
                 .WithRelationshipDefaults(r =>
                 {
@@ -76,7 +75,6 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
                     plan.StayInBuilding(northwarehouse, 0009, 1439);
                 });
         }
@@ -91,7 +89,8 @@ namespace MoreNPCs.NPCs
                 Appearance.Build();
                 Dealer.Home = Building.Get<NorthWarehouse>();
                 WireDealerEvents();
-                Aggressiveness = 2f;
+                MoreNPCs.Utils.DealerStateHelper.EnsurePotentialDealer(Dealer);
+                Aggressiveness = 0.5f; // was 2f (out of the 0..1 range other dealers use)
                 Region = Region.Northtown;
                 Schedule.Enable();
             }

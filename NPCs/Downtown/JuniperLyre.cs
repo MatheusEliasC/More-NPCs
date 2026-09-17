@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class JuniperLyre : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -22,7 +24,7 @@ namespace MoreNPCs.NPCs
             var cafe = Building.Get<Cafe>();
 
             Vector3 spawnPos = new Vector3(134.1605f, 6.0623f, 114.3804f);
-            // Open-world walk point (downtown town center area) â€” not a Building / StayInBuilding.
+            // Open-world walk point (downtown town center area) — not a Building / StayInBuilding.
             Vector3 townCenter = new Vector3(69.7895f, 1.065f, 15.4409f);
 
             builder.WithIdentity("juniper_lyre", "Juniper", "Lyre")
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/Cap/Cap", new Color(0.232f, 0.232f, 0.232f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(400f, 800f)
@@ -85,8 +86,8 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
 
+                    plan.EnsureDealSignal();
                     // After overpass sleep (~07:30): morning downtown, commute to Pillville shift, back downtown, night under overpass.
                     plan.UseVendingMachine(0740);
                     plan.Add(new WalkToSpec { Destination = townCenter, StartTime = 0810, FaceDestinationDirection = true });

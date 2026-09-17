@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MelonLoader;
+using MoreNPCs.Patches;
 using UnityEngine;
 
 namespace MoreNPCs.Utils
@@ -11,7 +12,7 @@ namespace MoreNPCs.Utils
     /// </summary>
     internal sealed class BuildingSetup
     {
-        private const float RetryIntervalSeconds = 0.01f; // 10ms when setup pending - load as soon as GameObjects ready
+        private const float RetryIntervalSeconds = 0.5f; // poll 2x/s while setup pending (was 10ms, then 0.25s — balance register-ASAP vs load cost)
         private const string SourceDoorPath = "Map/Hyland Point/Region_Downtown/Towers/TallOfficeBuilding/StaticDoor";
 
         /// <summary>World euler for copied TallOffice StaticDoor when parented; template is ~0,180,0.</summary>
@@ -24,7 +25,7 @@ namespace MoreNPCs.Utils
         private static readonly Vector3 DoorWorldEulerIdentity = Vector3.zero;
 
         /// <summary>
-        /// Apt 3–4: same as Short Tower / Westville room doors (~180° Y). Apt 2 uses <see cref="DoorWorldEulerIdentity"/>.
+        /// Apt 3â€“4: same as Short Tower / Westville room doors (~180Â° Y). Apt 2 uses <see cref="DoorWorldEulerIdentity"/>.
         /// </summary>
         private static readonly Vector3 DowntownApartmentDoorWorldEuler = DefaultDoorWorldEuler;
 
@@ -36,13 +37,13 @@ namespace MoreNPCs.Utils
             ("Map/Hyland Point/Region_Downtown", new Vector3(-0.7038f, 0.7125f, 72.4522f), DoorWorldEulerIdentity, "Apartment Building 2", "ApartmentBuilding2", "downtown, custom apartment building 2 container"),
             ("Map/Hyland Point/Region_Downtown", new Vector3(-7.6395f, 0.425f, 57.4574f), DowntownApartmentDoorWorldEuler, "Apartment Building 3", "ApartmentBuilding3", "downtown, custom apartment building 3"),
             ("Map/Hyland Point/Region_Downtown", new Vector3(-10.2952f, 0.4616f, 66.7971f), DowntownApartmentDoorWorldEuler, "Apartment Building 4", "ApartmentBuilding4", "downtown, custom apartment building 4"),
-            ("Map/Hyland Point/Region_Downtown", new Vector3(136.0216f, -0.6856f, 34.2468f), new Vector3(0f, 330f, 0f), "PPGrave", "PPGrave", "downtown, memorial — not a hangout"),
+            ("Map/Hyland Point/Region_Downtown", new Vector3(136.0216f, -0.6856f, 34.2468f), new Vector3(0f, 330f, 0f), "PPGrave", "PPGrave", "downtown, memorial â€” not a hangout"),
             ("Map/Hyland Point/Region_Westville/Apartment Building", new Vector3(-165.8861f, -0.7f, 94.5868f), DefaultDoorWorldEuler, "Room 4", "Room4", "in westville, door in Room4 container"),
             ("Map/Hyland Point/Region_Westville/Apartment Building", new Vector3(-165.8861f, 2.4f, 94.5868f), DefaultDoorWorldEuler, "Room 5", "Room5", "in westville, door in Room5 container"),
             ("Map/Hyland Point/Region_Westville/Apartment Building", new Vector3(-172.8831f, 2.4f, 94.5868f), DefaultDoorWorldEuler, "Room 6", "Room6", "in westville, door in Room6 container"),
             ("Map/Hyland Point/Region_Westville/ChemicalPlant/Warehouse01", new Vector3(-101.6376f, -3.7f, 89.5072f), new Vector3(0f, 270f, 0f), "Chemical Plant B", null, "in westville, not a hangout spot, workplace"),
             ("Map/Hyland Point/Region_Westville/Construction Site/LaborerHouse", new Vector3(-128.4608f, -3.5185f, 93.01f), new Vector3(0f, 290f, 0f), "Tool Shed", null, "in westville, not a hangout spot, workplace"),
-            ("Map/Hyland Point/Region_Downtown/Gas Station/gas station", new Vector3(10.6963f, 0.3515f, -6.1312f), new Vector3(0f, 160f, 0f), "Gasmart Freezer", null, "downtown gas station freezer — dock-region dealer home"),
+            ("Map/Hyland Point/Region_Downtown/Gas Station/gas station", new Vector3(10.6963f, 0.3515f, -6.1312f), new Vector3(0f, 160f, 0f), "Gasmart Freezer", null, "downtown gas station freezer â€” dock-region dealer home"),
             ("Map/Hyland Point/Region_Downtown/Gas Station/gas station/Bodyshop/Interior/Office", new Vector3(6.5439f, 0.2741f, -6.0508f), DefaultDoorWorldEuler, "BodyShop Office", null, "in downtown, not a hangout spot, workplace but can also function as a house"),
             ("Map/Hyland Point/Cliffs/Manor Cliffs/manor tunnel/Wall/Bomb plant location", new Vector3(166.5998f, 5.6828f, -55.2601f), DoorWorldEulerIdentity, "Manor Tunnel Hatch", null, "in uptown, under manor, single person house meant for an uptown dealer"),
             ("Map/Hyland Point/Region_Downtown/GroceryStore/grocerystore/Main", new Vector3(12.4867f, 0.2614f, 68.1383f), DoorWorldEulerIdentity, "Grocery Backdoor", null, "in downtown, not a hangout spot, kinda out of the way"),
@@ -93,7 +94,7 @@ namespace MoreNPCs.Utils
 
         private static void EnsureSourceBuildingIfMissing(GameObject sourceDoor, Type staticDoorType, Type enterableBuildingType)
         {
-            var sourceDoorComponent = sourceDoor.GetComponent(staticDoorType);
+            var sourceDoorComponent = sourceDoor.GetComponent(Il2CppTypeHelper.To(staticDoorType));
             if (sourceDoorComponent == null) return;
 
             var currentBuilding = GetMemberValue(sourceDoorComponent, "Building");
@@ -166,7 +167,7 @@ namespace MoreNPCs.Utils
             targetDoor.transform.SetParent(doorParent, true);
 
             var buildingComponent = EnsureEnterableBuilding(buildingRoot, enterableBuildingType, buildingName, allowMultiple: true);
-            var targetDoorComponent = targetDoor.GetComponent(staticDoorType);
+            var targetDoorComponent = targetDoor.GetComponent(Il2CppTypeHelper.To(staticDoorType));
             if (buildingComponent == null || targetDoorComponent == null) return false;
 
             var intObj = GetInteractableObject(targetDoor, interactableType);
@@ -192,7 +193,7 @@ namespace MoreNPCs.Utils
 
             if (allowMultiple)
             {
-                var existing = buildingRoot.GetComponents(enterableBuildingType);
+                var existing = buildingRoot.GetComponents(Il2CppTypeHelper.To(enterableBuildingType));
                 foreach (var c in existing)
                 {
                     var n = GetMemberValue(c, "BuildingName") as string;
@@ -202,18 +203,31 @@ namespace MoreNPCs.Utils
             }
             else
             {
-                var component = buildingRoot.GetComponent(enterableBuildingType);
+                var component = buildingRoot.GetComponent(Il2CppTypeHelper.To(enterableBuildingType));
                 if (component != null) return component as Component;
             }
 
-            var newComponent = buildingRoot.AddComponent(enterableBuildingType) as Component;
+            var guidStr = Guid.NewGuid().ToString();
+
+            // Pre-seed the GUID so NPCEnterableBuilding.Awake() can parse it. Awake does `new Guid(BakedGUID)` and
+            // throws "Unrecognized Guid format" (leaving the building unregistered → NPCs targeting it get stuck) if
+            // BakedGUID is empty. AddComponent on an active GameObject fires Awake synchronously, so we can't set the
+            // field first — instead, NPCEnterableBuildingAwakeGuidPatch (Harmony Prefix) fills a valid BakedGUID at the
+            // start of Awake for any building whose BakedGUID is blank. We still set BakedGUID/GUID here for good measure.
+            NPCEnterableBuildingAwakeGuidPatch.PreseedGuid = guidStr;
+
+            var newComponent = buildingRoot.AddComponent(Il2CppTypeHelper.To(enterableBuildingType)) as Component;
+            NPCEnterableBuildingAwakeGuidPatch.PreseedGuid = null;
             if (newComponent == null) return null;
 
-            var guid = Guid.NewGuid();
-            var guidStr = guid.ToString();
             SetMemberValue(newComponent, "BuildingName", buildingName);
-            SetMemberValue(newComponent, "BakedGUID", guidStr);
-            newComponent.GetType().GetMethod("SetGUID", BindingFlags.Public | BindingFlags.Instance)?.Invoke(newComponent, new object[] { guid });
+            if (string.IsNullOrEmpty(GetMemberValue(newComponent, "BakedGUID") as string))
+                SetMemberValue(newComponent, "BakedGUID", guidStr);
+
+            // Set the GUID property with a proper Il2CppSystem.Guid (managed System.Guid can't be passed via reflection).
+            var il2cppGuid = Il2CppTypeHelper.MakeIl2CppGuid(guidStr);
+            if (il2cppGuid != null)
+                SetMemberValue(newComponent, "GUID", il2cppGuid);
 
             if (newComponent is Behaviour b)
                 b.enabled = true;
@@ -226,10 +240,10 @@ namespace MoreNPCs.Utils
             var intObjTransform = targetDoor.transform.Find("IntObj");
             if (intObjTransform != null)
             {
-                var direct = intObjTransform.GetComponent(interactableType);
+                var direct = intObjTransform.GetComponent(Il2CppTypeHelper.To(interactableType));
                 if (direct != null) return direct;
             }
-            return targetDoor.GetComponentInChildren(interactableType, true) as Component;
+            return targetDoor.GetComponentInChildren(Il2CppTypeHelper.To(interactableType), true) as Component;
         }
 
         private static void EnsureIntObjDetectable(GameObject sourceDoor, GameObject targetDoor, Component intObj, Type interactableType)
@@ -299,12 +313,7 @@ namespace MoreNPCs.Utils
 
         private static Type FindGameType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

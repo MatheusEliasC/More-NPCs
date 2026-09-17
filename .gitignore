@@ -25,3 +25,19 @@ AGENTS.md
 **/.docfx/
 **/docfx.json.bak
 **/xrefmap.yml
+# Kiro spec files
+.kiro/
+
+# Test files
+Tests/
+
+# Build logs / temp diagnostic output
+build_*.log
+build_*.txt
+build_output.txt
+err*.txt
+*.csproj.backup
+
+# Local build helpers (contain machine-specific absolute paths)
+Directory.Build.props
+build-il2cpp.ps1

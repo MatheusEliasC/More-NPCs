@@ -9,24 +9,29 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Dewey Koontz â€” dock rat who runs with Jane / Mack / Dieselâ€™s crowd. Unlocks from those vanilla-adjacent links.
+    /// Dewey Koontz — dock rat who runs with Jane / Mack / Diesel’s crowd. Unlocks from those vanilla-adjacent links.
     /// </summary>
     public sealed class DeweyKoontz : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
             var docksIndustrial = Building.Get<DocksIndustrialBuilding>();
             var fishWarehouse = Building.Get<FishWarehouse>();
             Vector3 spawnPos = new Vector3(-34.5f, -1.535f, -28.5f);
-            Vector3 roundRoom = new Vector3(39.75f, -8.035f, 40.75f);
-            Vector3 underMotel = new Vector3(-52.25f, -6.535f, 92.5f);
-            Vector3 sewerStorageEntrance = new Vector3(36.7f, -8.035f, 76.7f);
+            // Surface-level dock waypoints. The old route used sewer/manhole points
+            // (Y = -6.5 / -8.0) reachable only through the manhole cover; when it
+            // closes the NPC gets stranded on top of the lid. Keep everything above ground.
+            Vector3 roundRoom = new Vector3(-11.8076f, 1.065f, 67.7038f);
+            Vector3 underMotel = new Vector3(-67.4977f, -1.535f, -38.2393f);
+            Vector3 sewerStorageEntrance = new Vector3(-101.2265f, -1.485f, -42.492f);
             builder.WithIdentity("dewey_koontz", "Dewey", "Koontz")
                 .WithAppearanceDefaults(av =>
                 {
@@ -55,7 +60,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/CombatBoots/CombatBoots", new Color(0.16f, 0.15f, 0.14f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 550f, maxWeekly: 820f)
@@ -84,14 +88,14 @@ namespace MoreNPCs.NPCs
                 .WithSchedule(plan =>
                 {
                     plan.EnsureDealSignal();
-                    plan.StayInBuilding(docksIndustrial, 0642, 86);
+                    plan.StayInBuilding(docksIndustrial, 0642, 85);
                     plan.Add(new WalkToSpec { Destination = roundRoom, StartTime = 0808, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
-                    plan.StayInBuilding(fishWarehouse, 0905, 118);
+                    plan.StayInBuilding(fishWarehouse, 0905, 117);
                     plan.Add(new WalkToSpec { Destination = underMotel, StartTime = 1103, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 105, 0) * Vector3.forward });
-                    plan.StayInBuilding(docksIndustrial, 1310, 132);
+                    plan.StayInBuilding(docksIndustrial, 1310, 151);
                     plan.Add(new WalkToSpec { Destination = sewerStorageEntrance, StartTime = 1542, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 210, 0) * Vector3.forward });
                     plan.UseVendingMachine(1705);
-                    plan.StayInBuilding(fishWarehouse, 1815, 118);
+                    plan.StayInBuilding(fishWarehouse, 1815, 110);
                     plan.StayInBuilding(docksIndustrial, 2006, 635);
                 });
         }

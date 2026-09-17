@@ -9,13 +9,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Vera Knox â€” dock worker; ties to Maya Webb and Salvador Moreno.</summary>
+    /// <summary>Vera Knox — dock worker; ties to Maya Webb and Salvador Moreno.</summary>
     public sealed class VeraKnox : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/Beanie/Beanie", new Color(0.2f, 0.22f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 650f, maxWeekly: 940f)

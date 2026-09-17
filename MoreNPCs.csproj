@@ -10,8 +10,8 @@
 
 	<!-- Define paths for different configurations -->
 	<PropertyGroup Condition="'$(Configuration)'=='Mono'">
-		<GamePath>D:\Schedule 1 Dependencies\Mono</GamePath>
-		<ManagedPath>$(GamePath)\Schedule I_Data\Managed</ManagedPath>
+		<GamePath>C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
+		<ManagedPath>$(GamePath)\MelonLoader\Il2CppAssemblies</ManagedPath>
 		<MelonLoaderPath>$(GamePath)\MelonLoader\net35</MelonLoaderPath>
 		<ModsPath>$(GamePath)\Mods</ModsPath>
 		<DefineConstants>MONO</DefineConstants>
@@ -19,7 +19,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Il2cpp'">
-		<GamePath>D:\Schedule 1 Dependencies\Il2cpp</GamePath>
+		<GamePath>C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
 		<ManagedPath>$(GamePath)\MelonLoader\Il2CppAssemblies</ManagedPath>
 		<MelonLoaderPath>$(GamePath)\MelonLoader\net6</MelonLoaderPath>
 		<ModsPath>$(GamePath)\Mods</ModsPath>
@@ -28,8 +28,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='CrossCompat'">
-		<GamePath>D:\Schedule 1 Dependencies\Mono</GamePath>
-		<ManagedPath>$(GamePath)\Schedule I_Data\Managed</ManagedPath>
+		<GamePath>C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
+		<ManagedPath>$(GamePath)\MelonLoader\Il2CppAssemblies</ManagedPath>
 		<MelonLoaderPath>$(GamePath)\MelonLoader\net35</MelonLoaderPath>
 		<ModsPath>$(GamePath)\Mods</ModsPath>
 		<DefineConstants>CROSS_COMPAT</DefineConstants>
@@ -44,9 +44,9 @@
 	<!-- Set UseLocalS1API to 'true' to use a local assembly reference instead of NuGet -->
 	<!-- You can also set this via command line: dotnet build /p:UseLocalS1API=true -->
 	<PropertyGroup>
-		<UseLocalS1API>true</UseLocalS1API>
+		<UseLocalS1API>false</UseLocalS1API>
 		<!-- Update this path to point to your local S1API DLL -->
-		<S1APILocalPath>D:\Schedule 1 Dependencies\S1API\S1API.dll</S1APILocalPath>
+		<S1APILocalPath>C:\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</S1APILocalPath>
 	</PropertyGroup>
 
 	<!-- Mono references -->
@@ -112,12 +112,6 @@
 
 	<!-- CrossCompat references (Mono without Assembly-CSharp) -->
 	<ItemGroup Condition="'$(Configuration)'=='CrossCompat'">
-		<Reference Include="com.rlabrecque.steamworks.net">
-			<HintPath>$(ManagedPath)\com.rlabrecque.steamworks.net.dll</HintPath>
-		</Reference>
-		<Reference Include="FishNet.Runtime">
-			<HintPath>$(ManagedPath)\FishNet.Runtime.dll</HintPath>
-		</Reference>
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
 		</Reference>
@@ -165,9 +159,6 @@
 		</Reference>
 		<Reference Include="0Harmony">
 			<HintPath>$(MelonLoaderPath)\0Harmony.dll</HintPath>
-		</Reference>
-		<Reference Include="Assembly-CSharp">
-			<HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
@@ -249,6 +240,10 @@
 		<Compile Include="Utils\CartelStatusWatcher.cs" />
 		<Compile Include="Utils\NPCUnlockWatcher.cs" />
 		<Compile Include="Utils\NPCIdleLocations.cs" />
+		<Compile Include="Utils\Il2CppTypeHelper.cs" />
+		<Compile Include="Utils\NpcSafe.cs" />
+		<Compile Include="Utils\CustomerDealAttendanceNudger.cs" />
+		<Compile Include="Utils\DealerStateHelper.cs" />
 		<Compile Include="Utils\GameDealerFinder.cs" />
 		<Compile Include="Utils\PlayerCashHelper.cs" />
 		<Compile Include="Persistence\MoreNPCsModSave.cs" />
@@ -256,6 +251,8 @@
 		<Compile Include="Utils\PPHylandDialogue.cs" />
 		<Compile Include="Utils\PPHylandHandoverWarning.cs" />
 		<Compile Include="Patches\DrugTypeMethodsGetColorPatch.cs" />
+		<Compile Include="Patches\StayInBuildingOnActiveTickGuardPatch.cs" />
+		<Compile Include="Patches\NPCEnterableBuildingAwakeGuidPatch.cs" />
 		<Compile Include="Patches\PPHylandSampleDifficultyPatch.cs" />
 		<Compile Include="Patches\PPHylandHandoverSampleGatePatch.cs" />
 		<Compile Include="Patches\PPHylandHandoverScreenHelper.cs" />
@@ -287,7 +284,7 @@
 	</ItemGroup>
 	<!-- S1API.Forked Reference: NuGet Package (default) -->
 	<ItemGroup Condition="'$(UseLocalS1API)' != 'true'">
-		<PackageReference Include="S1API.Forked" Version="*" />
+		<PackageReference Include="S1API.Forked" Version="3.2.0" />
 	</ItemGroup>
 
 	<!-- S1API.Forked Reference: Local Assembly -->
@@ -302,6 +299,23 @@
 	  <EmbeddedResource Include="Resources\relation_circle.png" />
 	  <EmbeddedResource Include="Resources\tile.png" />
 	  <EmbeddedResource Include="Resources\WhiteboardListing\*.jpg" />
+	</ItemGroup>
+	<!--
+	  IL2CPP interop references. These MUST point at the MelonLoader Il2CppAssemblies (Il2CppInterop-generated),
+	  whose game types live under the Il2CppScheduleOne.* namespace and match what MelonLoader loads at runtime.
+	  Do NOT reference the Cpp2IL dump (…\Cpp2IL\cpp2il_out\Assembly-CSharp.dll): its types are plain ScheduleOne.*
+	  stubs, so [HarmonyPatch(typeof(GameType))] would compile but throw TypeLoadException at runtime.
+	-->
+	<ItemGroup Condition="'$(Configuration)'=='Il2cpp'">
+	  <Reference Include="Il2CppScheduleOne.Core">
+	    <HintPath>$(ManagedPath)\Il2CppScheduleOne.Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="S1APILoader">
+	    <HintPath>..\..\..\..\Downloads\S1API Forked 3.2.0 1194 3.2.0 2026-08-16T10-24Z KXeTeCe6i\Plugins\S1APILoader.MelonLoader.dll</HintPath>
+	  </Reference>
+	  <Reference Include="UnityEngine">
+	    <HintPath>$(ManagedPath)\UnityEngine.dll</HintPath>
+	  </Reference>
 	</ItemGroup>
 
 	<PropertyGroup>
@@ -319,3 +333,6 @@
 	</Target>
 
 </Project>
+
+
+

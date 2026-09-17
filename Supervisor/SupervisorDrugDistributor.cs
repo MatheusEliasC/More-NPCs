@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +64,8 @@ namespace MoreNPCs.Supervisor
             try
             {
                 var invType = FindType("ScheduleOne.NPCs.NPCInventory");
-                var inv = npc.gameObject.GetComponent(invType) ?? npc.gameObject.GetComponentInChildren(invType, true);
+                var il2cppInvType = Il2CppTypeHelper.To(invType);
+                var inv = npc.gameObject.GetComponent(il2cppInvType) ?? npc.gameObject.GetComponentInChildren(il2cppInvType, true);
                 if (inv == null) return result;
                 var slots = inv.GetType().GetProperty("ItemSlots")?.GetValue(inv) as System.Collections.IEnumerable;
                 if (slots == null) return result;
@@ -176,12 +177,7 @@ namespace MoreNPCs.Supervisor
 
         private static Type FindType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

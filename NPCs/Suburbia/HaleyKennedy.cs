@@ -8,13 +8,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Kennedy child (10) â€” blonde family look, park and errands after school.</summary>
+    /// <summary>Kennedy child (10) — blonde family look, park and errands after school.</summary>
     public sealed class HaleyKennedy : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         private static readonly Color KidHair = new Color(0.612f, 0.51f, 0.29f);
         private static readonly Color KidSkin = new Color(0.81f, 0.648f, 0.496f);
@@ -53,7 +55,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sandals/Sandals", new Color(0.42f, 0.32f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 50f, maxWeekly: 250f)

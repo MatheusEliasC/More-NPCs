@@ -8,6 +8,7 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
@@ -17,13 +18,14 @@ namespace MoreNPCs.NPCs
     public sealed class BryceSherman : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
             var shermanHouse = Building.Get<ShermanHouse>();
             var cornerStore = Building.Get<CornerStore>();
             Vector3 westGasmart = new Vector3(-113.1828f, -2.835f, 61.2241f);
-            // Sherman House interior — not the sidewalk in front of the lot
+            // Sherman House interior � not the sidewalk in front of the lot
             Vector3 spawnPos = new Vector3(-60.2f, 1.215f, 82.4f);
 
             builder.WithIdentity("bryce_sherman", "Bryce", "Sherman")
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.12f, 0.12f, 0.14f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(50f, 250f)
@@ -85,7 +86,7 @@ namespace MoreNPCs.NPCs
                     plan.StayInBuilding(shermanHouse, 1140, 119);
                     plan.UseVendingMachine(1325);
                     plan.StayInBuilding(cornerStore, 1410, 104);
-                    // Home 17:25 → midnight (next day loop picks up 000 block above)
+                    // Home 17:25 ? midnight (next day loop picks up 000 block above)
                     plan.StayInBuilding(shermanHouse, 1725, 395);
                 });
         }

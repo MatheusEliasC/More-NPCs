@@ -8,12 +8,14 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class CalderWren : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -50,14 +52,13 @@ namespace MoreNPCs.NPCs
                     av.WithFaceLayer("Avatar/Layers/Face/Face_Neutral", Color.black);
                     av.WithAccessoryLayer("Avatar/Accessories/FacialHair/Chevron/Chevron", av.HairColor);
 
-                    // Young downtown â€” same-age peer look; not paired with Marisâ€™s older â€œmentorâ€ vibe
+                    // Young downtown — same-age peer look; not paired with Maris’s older “mentor” vibe
                     av.WithBodyLayer("Avatar/Layers/Top/RolledButtonUp", new Color(0.30f, 0.34f, 0.38f));
                     av.WithBodyLayer("Avatar/Layers/Bottom/Jeans", new Color(0.22f, 0.24f, 0.30f));
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/OpenVest/OpenVest", new Color(0.26f, 0.22f, 0.20f));
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.14f, 0.14f, 0.16f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(500f, 900f)
@@ -88,8 +89,8 @@ namespace MoreNPCs.NPCs
                 })
                 .WithSchedule(plan =>
                 {
-                    plan.EnsureDealSignal();
 
+                    plan.EnsureDealSignal();
                     plan.Add(new StayInBuildingSpec { BuildingName = "HAM Legal", StartTime = 0910, DurationMinutes = 119 });
                     plan.StayInBuilding(cafe, 1210, 94);
                     plan.UseATM(1405);

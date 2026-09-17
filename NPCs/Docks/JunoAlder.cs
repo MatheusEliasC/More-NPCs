@@ -9,13 +9,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Juno Alder â€” docks odd-jobber who crosses paths with Kaelaâ€™s runs and Lisaâ€™s plant work.</summary>
+    /// <summary>Juno Alder — docks odd-jobber who crosses paths with Kaela’s runs and Lisa’s plant work.</summary>
     public sealed class JunoAlder : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -52,7 +54,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sneakers/Sneakers", new Color(0.38f, 0.36f, 0.34f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 620f, maxWeekly: 900f)

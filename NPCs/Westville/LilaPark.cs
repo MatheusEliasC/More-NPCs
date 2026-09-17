@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
@@ -8,17 +8,20 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class LilaPark : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
             var cornerStore = Building.Get<CornerStore>();
             var sauerkrautSupreme = Building.Get<SauerkrautSupreme>();
+            var thePissHut = Building.Get<ThePissHut>();
             Vector3 spawnPos = new Vector3(-96.6140f, -2.8350f, 58.3390f);
             Vector3 busStop = new Vector3(-13.0495f, 1.065f, 95.5169f);
 
@@ -50,7 +53,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/OpenVest/OpenVest", new Color(0.20f, 0.20f, 0.22f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(450f, 700f)
@@ -84,7 +86,11 @@ namespace MoreNPCs.NPCs
                     plan.StayInBuilding(sauerkrautSupreme, 1224, 124);
                     plan.UseATM(1454);
                     plan.UseVendingMachine(1644);
-                    plan.Add(new StayInBuildingSpec { BuildingName = "Room 2", StartTime = 1854, DurationMinutes = 720 });
+                    // Overnight home. The old schedule targeted "Room 2", a building that BuildingSetup
+                    // never fabricates (only Rooms 4/5/6 exist), so she tried to enter a non-existent
+                    // building and froze. Use a real, typed Westville building instead. Start after the
+                    // deal window (WithOrderTime 1820) so she is free to attend the arranged deal.
+                    plan.StayInBuilding(thePissHut, 2030, 623);
                 });
         }
 

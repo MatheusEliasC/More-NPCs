@@ -12,11 +12,12 @@ using UnityEngine;
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// P.P. Hyland â€” no last name; Tony hair (slightly darker than skin), no brows; gold chain &amp; Polex; mouth/wrinkles like Grunk.
+    /// P.P. Hyland — no last name; Tony hair (slightly darker than skin), no brows; gold chain &amp; Polex; mouth/wrinkles like Grunk.
     /// </summary>
     public sealed class PPHyland : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -59,7 +60,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/DressShoes/DressShoes", new Color(0.08f, 0.08f, 0.09f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(10000f, 20000f)

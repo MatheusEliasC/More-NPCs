@@ -2,11 +2,11 @@ using System;
 using System.Diagnostics;
 using HarmonyLib;
 using MoreNPCs.Utils;
-using ScheduleOne.Cartel;
-using ScheduleOne.DevUtilities;
-using ScheduleOne.Levelling;
-using ScheduleOne.Map;
-using ScheduleOne.UI;
+using Il2CppScheduleOne.Cartel;
+using Il2CppScheduleOne.DevUtilities;
+using Il2CppScheduleOne.Levelling;
+using Il2CppScheduleOne.Map;
+using Il2CppScheduleOne.UI;
 
 namespace MoreNPCs.Patches
 {

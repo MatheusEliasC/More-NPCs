@@ -9,13 +9,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Olive Crank â€” sewer-side docks; clashing dock-rat colors (name only), chef hat, reads unwell.</summary>
+    /// <summary>Olive Crank — sewer-side docks; clashing dock-rat colors (name only), chef hat, reads unwell.</summary>
     public sealed class OliveCrank : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -57,7 +59,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Head/ChefHat/ChefHat", new Color(0.9f, 0.88f, 0.86f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 640f, maxWeekly: 920f)

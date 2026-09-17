@@ -6,12 +6,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class JosephWilkinson : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
         
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -47,7 +49,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Chest/OpenVest/OpenVest", new Color(0.23529411852359773f, 0.23529411852359773f, 0.23529411852359773f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 500f, maxWeekly: 900f)

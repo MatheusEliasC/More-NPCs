@@ -8,13 +8,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Downtown customer â€” Slop Shop / bank / Apt 2 nights; formerly Uriah, not Evan (distinct from Evan Rowland).</summary>
+    /// <summary>Downtown customer — Slop Shop / bank / Apt 2 nights; formerly Uriah, not Evan (distinct from Evan Rowland).</summary>
     public sealed class EthanVance : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -47,7 +49,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/CombatBoots/CombatBoots", new Color(0.11f, 0.11f, 0.12f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(450f, 850f)

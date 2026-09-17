@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Reflection;
 using MelonLoader;
@@ -62,8 +62,12 @@ namespace MoreNPCs.Utils
             if (npc == null) yield break;
             if (string.Equals(supervisorId, SupervisorIds.Dominic, System.StringComparison.OrdinalIgnoreCase))
                 yield return EnterBuildingWhenReady(npc, SlopShopBuildingName);
-            else if (npc?.Movement != null)
-                npc.Movement.SetDestination(SupervisorConfig.DefaultSpawnPosition);
+            else
+            {
+                var movement = NpcSafe.Movement(npc);
+                if (movement != null)
+                    movement.SetDestination(SupervisorConfig.DefaultSpawnPosition);
+            }
         }
 
         public static Vector3 GetThomasIdlePosition(Vector3 fallback)
@@ -80,22 +84,23 @@ namespace MoreNPCs.Utils
 
         private static IEnumerator EnterBuildingWhenReady(NPC npc, string buildingName)
         {
-            if (npc?.Movement == null) yield break;
+            var movement = NpcSafe.Movement(npc);
+            if (movement == null) yield break;
 
             var building = TryFindBuilding(buildingName);
             if (building == null)
             {
                 var pos = buildingName == BankBuildingName ? BankFallback : SlopShopFallback;
-                npc.Movement.SetDestination(pos);
+                movement.SetDestination(pos);
                 yield break;
             }
 
             var entryPoint = GetBuildingEntryPoint(building);
             if (entryPoint != null)
             {
-                npc.Movement.SetDestination(entryPoint.position);
+                movement.SetDestination(entryPoint.position);
                 float timeout = 30f;
-                while (npc != null && timeout > 0 && Vector3.Distance(npc.Movement.FootPosition, entryPoint.position) > 2f)
+                while (npc != null && timeout > 0 && Vector3.Distance(movement.FootPosition, entryPoint.position) > 2f)
                 {
                     timeout -= Time.deltaTime;
                     yield return null;
@@ -111,11 +116,12 @@ namespace MoreNPCs.Utils
             var type = FindGameType("ScheduleOne.Map.NPCEnterableBuilding");
             if (type == null) return null;
 
-            var buildings = UnityEngine.Object.FindObjectsOfType(type) as Array;
+            var buildings = UnityEngine.Object.FindObjectsOfType(Il2CppTypeHelper.To(type)) as System.Collections.IEnumerable;
             if (buildings == null) return null;
 
             foreach (var b in buildings)
             {
+                if (b == null) continue;
                 var name = GetBuildingName(b);
                 if (string.Equals(name, buildingName, StringComparison.OrdinalIgnoreCase))
                     return b;
@@ -191,12 +197,7 @@ namespace MoreNPCs.Utils
 
         private static Type FindGameType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

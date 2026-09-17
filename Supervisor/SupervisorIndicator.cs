@@ -12,12 +12,22 @@ namespace MoreNPCs.Supervisor
         private static readonly HashSet<string> _done = new HashSet<string>();
         private static readonly Color SupervisorColor = new Color(0.655f, 0.545f, 0.98f, 1f);
 
-        public static void Initialize() => MelonCoroutines.Start(PollAndSetupRoutine());
+        private static bool _started;
+
+        public static void Initialize()
+        {
+            // Both supervisors call this; only run one polling coroutine.
+            if (_started) return;
+            _started = true;
+            MelonCoroutines.Start(PollAndSetupRoutine());
+        }
 
         private static IEnumerator PollAndSetupRoutine()
         {
             var wait = new WaitForSeconds(1f);
-            while (_done.Count < 2)
+            // Cap attempts so we don't scan the hierarchy 1x/s forever if a target never appears.
+            int attemptsLeft = 120;
+            while (_done.Count < 2 && attemptsLeft-- > 0)
             {
                 yield return wait;
                 TrySetupFor("silas_mercer", "SupervisorIndicator", "SUPERVISOR", SupervisorColor);

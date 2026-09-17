@@ -8,16 +8,18 @@ using S1API.Map;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Rusty Sump â€” docks weirdo / scavenger (not hazmat fugitive, not Mikeâ€™s homeless sewer act).
+    /// Rusty Sump — docks weirdo / scavenger (not hazmat fugitive, not Mike’s homeless sewer act).
     /// Unlocks through the extra dock customers tied to Jane / Mack / Diesel / Mike / Anna.
     /// </summary>
     public sealed class RustySump : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -57,7 +59,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/Sandals/Sandals", new Color(0.42f, 0.28f, 0.18f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 280f, maxWeekly: 480f)

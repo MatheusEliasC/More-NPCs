@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MelonLoader;
 using MoreNPCs.Supervisor;
 using S1API.Economy;
@@ -8,12 +8,14 @@ using S1API.GameTime;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class ThomasAshford : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         public static readonly Vector3 BankFallbackIdlePosition = new Vector3(73.4736f, 0.9662f, 39.0171f);
 
@@ -47,7 +49,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.12f, 0.12f, 0.12f));
                 })
                 .WithSpawnPosition(BankFallbackIdlePosition)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(0f, 0f)
@@ -69,8 +70,7 @@ namespace MoreNPCs.NPCs
                         .SetUnlocked(false)
                         .SetUnlockType(NPCRelationship.UnlockType.DirectApproach)
                         .WithConnectionsById("");
-                })
-                .WithSchedule(plan => plan.EnsureDealSignal());
+                });
         }
 
         public ThomasAshford() : base() { }

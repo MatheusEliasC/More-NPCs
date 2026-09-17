@@ -3,19 +3,25 @@ using S1API.Economy;
 using S1API.Entities;
 using S1API.Entities.Schedule;
 using S1API.GameTime;
+using S1API.Map;
+using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     public sealed class JasonReed : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
-            Vector3 tacoticklers = new Vector3(-28.9266f, 1.065f, 74.6178f);
+            var northIndustrial = Building.Get<NorthIndustrialBuilding>();
+            // Standing spot at the Taco Ticklers register, beside Kyle Cooley's counter position.
+            Vector3 register = new Vector3(-28.9266f, 1.065f, 74.6178f);
             Vector3 outside = new Vector3(-36.3346f, 1.065f, 75.6414f);
             Vector3 spawnPos = new Vector3(-28.9266f, 1.065f, 74.6178f);
             builder.WithIdentity("jason_reed", "Jason", "Reed")
@@ -46,7 +52,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Waist/Belt/Belt", new Color(0.23529411852359773f, 0.23529411852359773f, 0.23529411852359773f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 400f, maxWeekly: 800f)
@@ -75,11 +80,17 @@ namespace MoreNPCs.NPCs
                 .WithSchedule(plan =>
                 {
                     plan.EnsureDealSignal();
-                    plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward});
+                    // Jason works the Taco Ticklers register standing next to Kyle Cooley (like the
+                    // official mod), not sitting in a booth. LocationDialogue keeps him standing at the
+                    // counter spot and interactable through the work shift.
+                    // Stand at the register facing the counter/Kyle. WalkToSpec.Forward sets the final
+                    // heading and persists (LocationDialogue reset it to face away, leaving him back-turned).
+                    // Forward points -Z toward the counter (opposite the wall he was facing).
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 0543, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.Add(new WalkToSpec { Destination = outside, StartTime = 1750, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 240, 0) * Vector3.forward});
-                    plan.Add(new WalkToSpec { Destination = tacoticklers, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
+                    plan.Add(new WalkToSpec { Destination = register, StartTime = 1949, FaceDestinationDirection = true, Forward = Quaternion.Euler(0, 180, 0) * Vector3.forward });
                     plan.Add(new UseVendingMachineSpec { StartTime = 2129 });
-                    plan.Add(new StayInBuildingSpec { BuildingName = "North Industrial Building", StartTime = 2212, DurationMinutes = 450 });
+                    plan.StayInBuilding(northIndustrial, 2212, 449);
                 });
         }
 

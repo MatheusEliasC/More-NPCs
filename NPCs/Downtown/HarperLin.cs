@@ -8,13 +8,15 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
-    /// <summary>Downtown customer â€” Apt 3; RE office + errands crowd. Knows Jennifer Rivera (listings) and Rhea Larkin (same downtown loop); Tessa for hook-ups. Charcoal blouse + skirt (no belt).</summary>
+    /// <summary>Downtown customer — Apt 3; RE office + errands crowd. Knows Jennifer Rivera (listings) and Rhea Larkin (same downtown loop); Tessa for hook-ups. Charcoal blouse + skirt (no belt).</summary>
     public sealed class HarperLin : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -49,7 +51,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/DressShoes/DressShoes", new Color(0.10f, 0.10f, 0.12f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(480f, 950f)

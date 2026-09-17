@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using MoreNPCs.Patches;
-using ScheduleOne.Economy;
-using ScheduleOne.UI.Handover;
-using TMPro;
+using Il2CppScheduleOne.Economy;
+using Il2CppScheduleOne.UI.Handover;
+using Il2CppTMPro;
 using UnityEngine;
 
 namespace MoreNPCs.Utils

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MelonLoader;
@@ -18,7 +18,7 @@ namespace MoreNPCs.Manager
 {
     /// <summary>
     /// When an RE tier property is owned, the vanilla whiteboard card is hidden. We re-enable the matching
-    /// <c>PropertyListing …</c> and show one unlocked artificial business on Title/Price (3D TMP), optional custom
+    /// <c>PropertyListing â€¦</c> and show one unlocked artificial business on Title/Price (3D TMP), optional custom
     /// sprite on child <c>Image</c> (<see cref="SpriteRenderer"/>), then notify via Ray.
     /// </summary>
     public static class ReOfficeWhiteboardDisplay
@@ -30,7 +30,12 @@ namespace MoreNPCs.Manager
         private static readonly Dictionary<string, Transform?> ListingTransformCache =
             new Dictionary<string, Transform?>(StringComparer.Ordinal);
 
-        /// <summary>Which business name is on the RE whiteboard Title for each tier (one slot per tier — Ray purchase must match).</summary>
+        /// <summary>Throttle for failed listing lookups so we don't re-run the expensive FindObjectsOfTypeAll every sync.</summary>
+        private static readonly Dictionary<string, float> _lastMissTime =
+            new Dictionary<string, float>(StringComparer.Ordinal);
+        private const float MissRescanSeconds = 60f;
+
+        /// <summary>Which business name is on the RE whiteboard Title for each tier (one slot per tier â€” Ray purchase must match).</summary>
         private static readonly Dictionary<ArtificialBusinessMapping.LaunderTier, string> ActiveListingByTier =
             new Dictionary<ArtificialBusinessMapping.LaunderTier, string>();
 
@@ -43,7 +48,7 @@ namespace MoreNPCs.Manager
                 businessName = cached;
                 return true;
             }
-            // Without this, TryPickDisplayBusiness can return a tier’s first unpurchased business even when the player
+            // Without this, TryPickDisplayBusiness can return a tierâ€™s first unpurchased business even when the player
             // does not own that RE slot.
             if (!ReOfficePropertyBusinessUnlock.PlayerOwnsReTierSlot(tier)) return false;
             return TryPickDisplayBusiness(tier, out businessName);
@@ -162,8 +167,15 @@ namespace MoreNPCs.Manager
             if (ListingTransformCache.TryGetValue(listingName, out var cached) && cached != null)
                 return cached;
 
+            // Resources.FindObjectsOfTypeAll(Transform) is very expensive (all objects incl. inactive/assets). When the
+            // listing isn't found (RE interior not loaded), we previously re-ran this full scan every ~12s → periodic
+            // hitch. Throttle failed lookups: only rescan for a missing listing every MissRescanSeconds.
+            if (_lastMissTime.TryGetValue(listingName, out var lastMiss)
+                && (UnityEngine.Time.time - lastMiss) < MissRescanSeconds)
+                return null;
+
             Transform? best = null;
-            foreach (var o in Resources.FindObjectsOfTypeAll(typeof(Transform)))
+            foreach (var o in Resources.FindObjectsOfTypeAll(Il2CppTypeHelper.To(typeof(Transform))))
             {
                 if (o is not Transform t || t.name != listingName) continue;
                 var go = t.gameObject;
@@ -173,7 +185,14 @@ namespace MoreNPCs.Manager
             }
 
             if (best != null)
+            {
                 ListingTransformCache[listingName] = best;
+                _lastMissTime.Remove(listingName);
+            }
+            else
+            {
+                _lastMissTime[listingName] = UnityEngine.Time.time;
+            }
             return best;
         }
 
@@ -199,7 +218,7 @@ namespace MoreNPCs.Manager
             {
                 var tmpType = FindType(typeName);
                 if (tmpType == null) continue;
-                var comp = go.GetComponent(tmpType);
+                var comp = go.GetComponent(Il2CppTypeHelper.To(tmpType));
                 if (comp == null) continue;
                 var prop = tmpType.GetProperty("text", bf) ?? tmpType.GetProperty("Text", bf);
                 if (prop != null && prop.CanWrite)
@@ -217,7 +236,7 @@ namespace MoreNPCs.Manager
                 var rayNpc = NPC.Get<RayHoffman>();
                 if (rayNpc == null) return false;
                 rayNpc.SendTextMessage(
-                    $"Heads up — {businessName} is listed on the downtown board (${price:N0}). Stop by the office when you want to buy in.");
+                    $"Heads up â€” {businessName} is listed on the downtown board (${price:N0}). Stop by the office when you want to buy in.");
                 return true;
             }
             catch
@@ -228,12 +247,7 @@ namespace MoreNPCs.Manager
 
         private static Type? FindType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
     }
 }

@@ -9,15 +9,17 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Blake Drift ‚Äî Gasmart-strip regular with the same wrong-energy lane as the freezer dealer, but sweaty, anxious, and not the ‚Äúfrozen‚Äù look.
+    /// Blake Drift ó Gasmart-strip regular with the same wrong-energy lane as the freezer dealer, but sweaty, anxious, and not the ìfrozenî look.
     /// </summary>
     public sealed class BlakeDrift : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -58,7 +60,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(0.58f, 0.48f, 0.2f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 620f, maxWeekly: 920f)

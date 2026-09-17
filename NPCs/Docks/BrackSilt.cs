@@ -8,15 +8,17 @@ using S1API.Map;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Brack Silt ‚Äî stimmy sewer regular (likes hanging in the tunnels, not a ‚Äúlives in the grate‚Äù archetype).
+    /// Brack Silt ó stimmy sewer regular (likes hanging in the tunnels, not a ìlives in the grateî archetype).
     /// </summary>
     public sealed class BrackSilt : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -56,7 +58,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Feet/CombatBoots/CombatBoots", new Color(0.28f, 0.26f, 0.24f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 520f, maxWeekly: 780f)

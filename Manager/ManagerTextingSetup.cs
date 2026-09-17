@@ -100,14 +100,10 @@ namespace MoreNPCs.Manager
         private static object GetGameNPC(NPC npc)
         {
             if (npc == null) return null;
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType("ScheduleOne.NPCs.NPC");
-                if (t == null) continue;
-                if (t.IsInstanceOfType(npc)) return npc;
-                return npc.gameObject?.GetComponent(t);
-            }
-            return null;
+            var t = MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType("ScheduleOne.NPCs.NPC");
+            if (t == null) return null;
+            if (t.IsInstanceOfType(npc)) return npc;
+            return npc.gameObject?.GetComponent(MoreNPCs.Utils.Il2CppTypeHelper.To(t));
         }
     }
 }

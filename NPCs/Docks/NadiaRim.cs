@@ -9,15 +9,17 @@ using S1API.Map.Buildings;
 using S1API.Products;
 using S1API.Properties;
 using UnityEngine;
+using MoreNPCs.Utils;
 
 namespace MoreNPCs.NPCs
 {
     /// <summary>
-    /// Nadia Rim â€” sewer-adjacent docks hanger-on tied to Mike, Anna, and Dieselâ€™s orbit.
+    /// Nadia Rim — sewer-adjacent docks hanger-on tied to Mike, Anna, and Diesel’s orbit.
     /// </summary>
     public sealed class NadiaRim : NPC
     {
         public override bool IsPhysical => true;
+        public override bool IsCustomer => true;
 
         protected override void ConfigurePrefab(NPCPrefabBuilder builder)
         {
@@ -54,7 +56,6 @@ namespace MoreNPCs.NPCs
                     av.WithAccessoryLayer("Avatar/Accessories/Neck/GoldChain/GoldChain", new Color(0.72f, 0.58f, 0.22f));
                 })
                 .WithSpawnPosition(spawnPos)
-                .EnsureCustomer()
                 .WithCustomerDefaults(cd =>
                 {
                     cd.WithSpending(minWeekly: 620f, maxWeekly: 880f)

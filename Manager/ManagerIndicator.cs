@@ -12,12 +12,21 @@ namespace MoreNPCs.Manager
         private static bool _done;
         private static readonly Color ManagerColor = new Color(1f, 0.55f, 0.2f, 1f);
 
-        public static void Initialize() => MelonCoroutines.Start(PollAndSetupRoutine());
+        private static bool _started;
+
+        public static void Initialize()
+        {
+            if (_started) return;
+            _started = true;
+            MelonCoroutines.Start(PollAndSetupRoutine());
+        }
 
         private static IEnumerator PollAndSetupRoutine()
         {
             var wait = new WaitForSeconds(1f);
-            while (!_done)
+            // Cap attempts so we don't scan the hierarchy 1x/s forever if the target never appears.
+            int attemptsLeft = 120;
+            while (!_done && attemptsLeft-- > 0)
             {
                 yield return wait;
                 if (TrySetup()) _done = true;

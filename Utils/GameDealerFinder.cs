@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +16,10 @@ namespace MoreNPCs.Utils
     {
         private static List<RecruitedGameDealer> _cache;
         private static float _cacheTime = -999f;
-        private const float CacheSeconds = 2f;
+        // Recruited-dealer count changes rarely (only when the player recruits/loses a dealer). The scan is expensive
+        // (FindObjectsOfType<Transform> over the whole scene + reflection per root), so cache for 30s to avoid the
+        // recurring <1s hitch it caused every ~5s. Recruiting a dealer calls InvalidateCache() for immediate refresh.
+        private const float CacheSeconds = 30f;
         private static Type _dealerBaseType;
 
         /// <summary>
@@ -53,12 +56,7 @@ namespace MoreNPCs.Utils
         private static Type FindCharacterClassType(string goName)
         {
             var typeName = $"ScheduleOne.NPCs.CharacterClasses.{goName}";
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(typeName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(typeName);
         }
 
         private static Type GetDealerBaseType()
@@ -77,12 +75,7 @@ namespace MoreNPCs.Utils
 
         private static Type FindType(string fullName)
         {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var t = asm.GetType(fullName);
-                if (t != null) return t;
-            }
-            return null;
+            return MoreNPCs.Utils.Il2CppTypeHelper.ResolveGameType(fullName);
         }
 
         private static List<RecruitedGameDealer> ScanForRecruitedDealers()
@@ -110,7 +103,7 @@ namespace MoreNPCs.Utils
                     var charClassType = FindCharacterClassType(goName);
                     if (charClassType != null && IsDealerType(charClassType))
                     {
-                        var comp = go.GetComponent(charClassType);
+                        var comp = go.GetComponent(Il2CppTypeHelper.To(charClassType));
                         if (comp != null)
                         {
                             ProcessDealerComponent(comp, null, go, list, seen, dealerButNotRecruited);
@@ -119,7 +112,7 @@ namespace MoreNPCs.Utils
                     }
 
                     // Path 2: ScheduleOne.Economy.Dealer directly (Molly, mod dealers)
-                    var dealerComp = go.GetComponent(dealerType);
+                    var dealerComp = go.GetComponent(Il2CppTypeHelper.To(dealerType));
                     if (dealerComp != null)
                     {
                         ProcessDealerComponent(dealerComp, null, go, list, seen, dealerButNotRecruited);

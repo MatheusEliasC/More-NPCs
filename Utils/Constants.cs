@@ -9,10 +9,10 @@ namespace MoreNPCs.Utils
         /// <summary>
         /// Mod information
         /// </summary>
-        public const string MOD_NAME = "Fannso's MoreNPCs";
-        public const string MOD_VERSION = "1.1.2";
-        public const string MOD_AUTHOR = "FannsoNetti";
-        public const string MOD_DESCRIPTION = "More NPCs made by fannsonetti";
+        public const string MOD_NAME = "MoreNPCs Forked";
+        public const string MOD_VERSION = "1.0.0";
+        public const string MOD_AUTHOR = "MonkeyMath";
+        public const string MOD_DESCRIPTION = "More NPCs made by fannsonetti - Forked by MonkeyMath";
 
         /// <summary>
         /// Legacy single-category name. Tunables now live in <see cref="MoreNPCsPreferences"/> (multiple categories: MoreNPCs_Manager, MoreNPCs_Supervisor, MoreNPCs_BusinessEconomy, etc.).
@@ -47,3 +47,4 @@ namespace MoreNPCs.Utils
 
     }
 }
+
