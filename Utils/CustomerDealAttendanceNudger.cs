@@ -202,16 +202,6 @@ namespace MoreNPCs.Utils
             Vector3 dealPos;
             bool haveDealPos = TryGetDealPosition(customer, out dealPos);
 
-            // TEMP DIAGNOSTIC (owen_crowe only): capture why the guards didn't block, so the next version
-            // can pinpoint the remaining loop. Cheap, scoped to one id, remove once confirmed.
-            if (string.Equals(id, "owen_crowe", StringComparison.OrdinalIgnoreCase))
-            {
-                float dist = -1f;
-                try { if (haveDealPos) dist = Vector2.Distance(new Vector2(gm.FootPosition.x, gm.FootPosition.z), new Vector2(dealPos.x, dealPos.z)); } catch { }
-                int rcNow = _resetCountByNpcId.TryGetValue(id, out var rcx) ? rcx : 0;
-                MelonLogger.Msg($"[DealNudge][DIAG] owen_crowe: haveDealPos={haveDealPos} distToSpot={dist:F2} resetsThisLoad={rcNow} awaiting={IsAwaitingDelivery(customer)} atLoc={IsAtDealLocation(customer)} inDialogue={IsInDialogue(npc)} customerResolved={(customer != null)}");
-            }
-
             // If she's ALREADY standing on the deal spot AND we've reset her at least once this load,
             // she has arrived — stop (the deal is being served here). This is a position-based guard that
             // does not rely on IsAwaitingDelivery/IsAtDealLocation, which read intermittently on mod NPCs
