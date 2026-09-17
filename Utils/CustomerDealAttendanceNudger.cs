@@ -28,9 +28,11 @@ namespace MoreNPCs.Utils
     internal sealed class CustomerDealAttendanceNudger
     {
         private const string ModNpcNamespace = "MoreNPCs.NPCs";
-        private const float ScanIntervalSeconds = 2f;
-        private const float PerNpcCooldownSeconds = 15f;
-        private const float IdleConfirmSeconds = 6f;
+        private const float ScanIntervalSeconds = 1f;
+        // Re-arm quickly: if a customer with an active deal refreezes after a reset, hit it again soon.
+        private const float PerNpcCooldownSeconds = 6f;
+        // Unfreeze almost immediately on load instead of making the player wait ~6s.
+        private const float IdleConfirmSeconds = 1.5f;
         private const float RagdollDurationSeconds = 1.0f;
         private const float RagdollForce = 5f;
 

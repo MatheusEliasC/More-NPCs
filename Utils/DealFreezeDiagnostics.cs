@@ -161,7 +161,17 @@ namespace MoreNPCs.Utils
                 }
                 catch (Exception e) { atLoc = "err:" + e.Message; }
 
-                return $"deal: type={ct.Name} contract={contract} awaiting={awaiting} dealTime={dealTime} atLoc={atLoc}";
+                // One-shot discovery: dump location-bearing members of the Customer and its Contract so
+                // we can find the real deal destination to warp to (the NavMeshAgent destination is empty).
+                string locDump = "";
+                try
+                {
+                    if (string.Equals(contract, "SET", StringComparison.Ordinal))
+                        locDump = " | LOC{" + DumpLocationMembers(customer) + "}";
+                }
+                catch (Exception e) { locDump = " | LOC{err:" + e.Message + "}"; }
+
+                return $"deal: type={ct.Name} contract={contract} awaiting={awaiting} dealTime={dealTime} atLoc={atLoc}{locDump}";
             }
             catch (Exception ex)
             {
@@ -169,13 +179,107 @@ namespace MoreNPCs.Utils
             }
         }
 
+        /// <summary>
+        /// Reflect over the Customer and its CurrentContract, logging every member (property/field, no args)
+        /// whose value is a Vector3 or Transform, or whose NAME hints at a deal location. Prints live values
+        /// so we can identify the exact member to warp mod customers to. Diagnostic only.
+        /// </summary>
+        private static string DumpLocationMembers(object customer)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            try
+            {
+                DumpLocationMembersOf("cust", customer, parts);
+
+                object? contractObj = null;
+                try
+                {
+                    var p = customer.GetType().GetProperty("CurrentContract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    contractObj = p?.GetValue(customer);
+                }
+                catch { }
+                if (contractObj != null)
+                    DumpLocationMembersOf("contract:" + contractObj.GetType().Name, contractObj, parts);
+            }
+            catch (Exception e) { parts.Add("dump-err:" + e.Message); }
+            return string.Join(" ", parts);
+        }
+
+        private static void DumpLocationMembersOf(string label, object obj, System.Collections.Generic.List<string> parts)
+        {
+            if (obj == null) return;
+            var t = obj.GetType();
+            const BindingFlags F = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+            foreach (var prop in t.GetProperties(F))
+            {
+                if (prop.GetIndexParameters().Length != 0) continue;
+                TryReportMember(label, prop.Name, () => prop.GetValue(obj), parts);
+            }
+            foreach (var f in t.GetFields(F))
+            {
+                TryReportMember(label, f.Name, () => f.GetValue(obj), parts);
+            }
+        }
+
+        private static void TryReportMember(string label, string name, Func<object?> getter, System.Collections.Generic.List<string> parts)
+        {
+            bool nameHints =
+                name.IndexOf("location", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("delivery", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("deaddrop", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("dropoff", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("destination", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("dealpoint", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("meetpoint", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("position", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            object? val;
+            try { val = getter(); } catch { return; }
+            if (val == null)
+            {
+                if (nameHints) parts.Add($"{label}.{name}=null");
+                return;
+            }
+
+            if (val is Vector3 v)
+            {
+                parts.Add($"{label}.{name}(V3)={v.ToString("F1")}");
+                return;
+            }
+            if (val is Transform tr)
+            {
+                try { parts.Add($"{label}.{name}(T)={tr.position.ToString("F1")}"); }
+                catch { parts.Add($"{label}.{name}(T)=?"); }
+                return;
+            }
+            if (nameHints)
+            {
+                // Named like a location but not a raw V3/Transform — report its type so we can drill in.
+                parts.Add($"{label}.{name}<{val.GetType().Name}>");
+            }
+        }
+
         private static bool IsCustomerType(Component c)
         {
             if (c == null) return false;
+            // Managed GetType() is reliable when the interop wrapper is loaded.
             var t = c.GetType();
-            return string.Equals(t.Name, "Customer", StringComparison.Ordinal)
+            if (string.Equals(t.Name, "Customer", StringComparison.Ordinal)
                 && t.FullName != null
-                && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0;
+                && t.FullName.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0)
+                return true;
+#if IL2CPP
+            // Fallback: managed type is the base UnityEngine.Component; ask the IL2CPP runtime.
+            try
+            {
+                var full = ((Il2CppSystem.Object)(object)c).GetIl2CppType()?.FullName;
+                if (full != null && full.IndexOf("Economy.Customer", StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+            catch { }
+#endif
+            return false;
         }
 
         /// <summary>
